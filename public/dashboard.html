@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediCare 2.0 – Dashboard</title>
+  <meta name="description" content="MediCare 2.0 Dashboard - Manage your health intelligently.">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="dashboard-page">
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div>
+        <h2>MediCare</h2>
+        <span>Smart Health Assist</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <button class="sidebar-nav-item active" data-section="home" onclick="navigateTo('home')">
+        <span class="nav-icon">🏠</span>
+        <span data-i18n="nav_home">Dashboard</span>
+      </button>
+      <button class="sidebar-nav-item" data-section="medicines" onclick="navigateTo('medicines')">
+        <span class="nav-icon">💊</span>
+        <span data-i18n="nav_medicines">Medicines</span>
+        <span class="nav-badge" id="med-badge">0</span>
+      </button>
+      <button class="sidebar-nav-item" data-section="symptoms" onclick="navigateTo('symptoms')">
+        <span class="nav-icon">🩺</span>
+        <span data-i18n="nav_symptoms">Symptom Check</span>
+      </button>
+      <button class="sidebar-nav-item" data-section="appointments" onclick="navigateTo('appointments')">
+        <span class="nav-icon">📅</span>
+        <span data-i18n="nav_appointments">Appointments</span>
+        <span class="nav-badge" id="appt-badge">0</span>
+      </button>
+
+      <span class="sidebar-section-label">Health</span>
+      <button class="sidebar-nav-item" data-section="fitness" onclick="navigateTo('fitness')">
+        <span class="nav-icon">🏃</span>
+        <span data-i18n="nav_fitness">Fitness</span>
+      </button>
+      <button class="sidebar-nav-item" data-section="profile" onclick="navigateTo('profile')">
+        <span class="nav-icon">👤</span>
+        <span data-i18n="nav_profile">Profile</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="navigateTo('profile')">
+        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sidebar-name">Loading…</div>
+          <div class="sidebar-user-role">Patient</div>
+        </div>
+      </div>
+      <button class="sidebar-nav-item" onclick="logout()" style="margin-top:4px">
+        <span class="nav-icon">🚪</span>
+        <span data-i18n="logout">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+      <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
+      <div class="topbar-actions">
+        <button class="topbar-btn" id="mic-btn" onclick="toggleVoice()" title="Voice Command" aria-label="Voice Command">🎤</button>
+        <select class="lang-select" id="lang-select" onchange="setLanguage(this.value)" aria-label="Language">
+          <option value="en">🇬🇧 EN</option>
+          <option value="hi">🇮🇳 HI</option>
+          <option value="gu">🏛️ GU</option>
+        </select>
+        <button class="topbar-btn" onclick="navigateTo('profile')" title="Profile" aria-label="Profile">👤</button>
+      </div>
+    </header>
+
+    <!-- Voice Transcript Bar -->
+    <div id="voice-bar" style="display:none; padding:8px 32px; background:rgba(124,58,237,0.05); border-bottom:1px solid var(--border); align-items:center; gap:12px;">
+      <div class="voice-indicator">
+        <div class="voice-dot listening" id="voice-dot"></div>
+        <span data-i18n="listening">Listening…</span>
+      </div>
+      <div class="voice-transcript" id="voice-transcript" style="flex:1; min-height:36px; padding:8px 14px">Say something…</div>
+      <button class="btn btn-sm btn-secondary" onclick="stopVoice()">✕ Stop</button>
+    </div>
+
+    <!-- Page Content -->
+    <main class="page-content">
+
+      <!-- ══════════════ HOME DASHBOARD ══════════════ -->
+      <section class="section-panel active" id="section-home">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner animate-fadeIn">
+          <div>
+            <div class="welcome-name" id="welcome-name">Hello, User 👋</div>
+            <div class="welcome-sub" id="welcome-date">Loading your health summary…</div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid stagger-children animate-fadeIn" id="home-stats">
+          <div class="stat-card purple">
+            <span class="stat-icon">💊</span>
+            <div class="stat-number" id="stat-medicines">—</div>
+            <div class="stat-label" data-i18n="stat_medicines">Medicines</div>
+          </div>
+          <div class="stat-card teal">
+            <span class="stat-icon">📅</span>
+            <div class="stat-number" id="stat-appointments">—</div>
+            <div class="stat-label" data-i18n="stat_appointments">Appointments</div>
+          </div>
+          <div class="stat-card green">
+            <span class="stat-icon">🏃</span>
+            <div class="stat-number" id="stat-steps">—</div>
+            <div class="stat-label" data-i18n="stat_steps">Steps Today</div>
+          </div>
+          <div class="stat-card orange">
+            <span class="stat-icon">💧</span>
+            <div class="stat-number" id="stat-water">—</div>
+            <div class="stat-label" data-i18n="stat_water">Glasses of Water</div>
+          </div>
+        </div>
+
+        <!-- Quick Health Tips -->
+        <div class="section-title" style="margin-bottom:16px" data-i18n="quick_tips">Today's Health Tips</div>
+        <div class="health-tips-carousel" id="home-tips"></div>
+      </section>
+
+      <!-- ══════════════ MEDICINES ══════════════ -->
+      <section class="section-panel" id="section-medicines">
+        <div class="section-title" data-i18n="medicines_title">💊 Medicine Reminders</div>
+        <div class="section-subtitle" data-i18n="medicines_sub">Add your medicines and get voice reminders at the right time.</div>
+
+        <!-- Add Form -->
+        <div class="add-panel">
+          <h3 data-i18n="add_medicine">Add New Medicine</h3>
+          <form id="medicine-form" onsubmit="addMedicine(event)">
+            <div class="form-row" style="margin-bottom:16px">
+              <div class="form-group">
+                <label class="form-label" data-i18n="medicine_name">Medicine Name</label>
+                <input type="text" id="med-name" class="form-control" placeholder="e.g. Aspirin" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="dosage">Dosage</label>
+                <input type="text" id="med-dosage" class="form-control" placeholder="e.g. 500mg" required>
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:20px">
+              <div class="form-group">
+                <label class="form-label" data-i18n="time">Reminder Time</label>
+                <input type="time" id="med-time" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="frequency">Frequency</label>
+                <select id="med-frequency" class="form-control">
+                  <option value="daily">Daily</option>
+                  <option value="twice-daily">Twice Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="as-needed">As Needed</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:20px">
+              <label class="form-label" data-i18n="notes">Notes (Optional)</label>
+              <input type="text" id="med-notes" class="form-control" placeholder="e.g. After meals">
+            </div>
+            <button type="submit" class="btn btn-primary" id="add-med-btn">
+              ➕ <span data-i18n="add_medicine_btn">Add Medicine</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Medicine List -->
+        <div id="medicines-list"></div>
+      </section>
+
+      <!-- ══════════════ SYMPTOMS ══════════════ -->
+      <section class="section-panel" id="section-symptoms">
+        <div class="section-title" data-i18n="symptoms_title">🩺 Symptom Checker</div>
+        <div class="section-subtitle" data-i18n="symptoms_sub">Select your symptoms and get instant health guidance.</div>
+
+        <div class="add-panel">
+          <h3 data-i18n="select_symptoms">Select Symptoms</h3>
+          <div class="symptom-chips" id="symptom-chips"></div>
+
+          <div class="form-group" style="margin-top:16px">
+            <label class="form-label" data-i18n="custom_symptom">Or type a symptom</label>
+            <div style="display:flex;gap:10px">
+              <input type="text" id="custom-symptom" class="form-control" placeholder="e.g. chest pain" style="flex:1">
+              <button class="btn btn-secondary" onclick="addCustomSymptom()" type="button" data-i18n="add">Add</button>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="checkSymptoms()" id="check-btn">
+              🔍 <span data-i18n="check_symptoms">Check Symptoms</span>
+            </button>
+            <button class="btn btn-secondary" onclick="clearSymptoms()" data-i18n="clear">Clear All</button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div id="symptom-results" style="display:none">
+          <div id="general-advice-banner" class="general-advice-banner mild"></div>
+          <div id="symptom-results-list"></div>
+        </div>
+      </section>
+
+      <!-- ══════════════ APPOINTMENTS ══════════════ -->
+      <section class="section-panel" id="section-appointments">
+        <div class="section-title" data-i18n="appointments_title">📅 Appointments</div>
+        <div class="section-subtitle" data-i18n="appointments_sub">Book and manage your doctor appointments.</div>
+
+        <!-- Add Form -->
+        <div class="add-panel">
+          <h3 data-i18n="book_appointment">Book Appointment</h3>
+          <form id="appointment-form" onsubmit="addAppointment(event)">
+            <div class="form-row" style="margin-bottom:16px">
+              <div class="form-group">
+                <label class="form-label" data-i18n="doctor_name">Doctor Name</label>
+                <input type="text" id="appt-doctor" class="form-control" placeholder="Dr. Sharma" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="specialization">Specialization</label>
+                <select id="appt-spec" class="form-control">
+                  <option value="General Physician">General Physician</option>
+                  <option value="Cardiologist">Cardiologist</option>
+                  <option value="Dermatologist">Dermatologist</option>
+                  <option value="Neurologist">Neurologist</option>
+                  <option value="Orthopedist">Orthopedist</option>
+                  <option value="Gynecologist">Gynecologist</option>
+                  <option value="Pediatrician">Pediatrician</option>
+                  <option value="ENT Specialist">ENT Specialist</option>
+                  <option value="Ophthalmologist">Ophthalmologist</option>
+                  <option value="Psychiatrist">Psychiatrist</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:16px">
+              <div class="form-group">
+                <label class="form-label" data-i18n="date">Date</label>
+                <input type="date" id="appt-date" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="time">Time</label>
+                <input type="time" id="appt-time" class="form-control" required>
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:20px">
+              <div class="form-group">
+                <label class="form-label" data-i18n="location">Location / Hospital</label>
+                <input type="text" id="appt-location" class="form-control" placeholder="City Hospital">
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="notes">Notes</label>
+                <input type="text" id="appt-notes" class="form-control" placeholder="Bring reports…">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="add-appt-btn">
+              📅 <span data-i18n="book_btn">Book Appointment</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Timeline -->
+        <div id="appointments-list"></div>
+      </section>
+
+      <!-- ══════════════ FITNESS ══════════════ -->
+      <section class="section-panel" id="section-fitness">
+        <div class="section-title" data-i18n="fitness_title">🏃 Fitness & Health</div>
+        <div class="section-subtitle" data-i18n="fitness_sub">Track your daily activity and maintain a healthy lifestyle.</div>
+
+        <div class="fitness-grid">
+          <!-- Steps -->
+          <div class="fitness-card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:16px;font-weight:700" data-i18n="steps_today">Daily Steps</div>
+                <div style="font-size:13px;color:var(--text-secondary)" data-i18n="goal_10k">Goal: 10,000 steps</div>
+              </div>
+              <span style="font-size:28px">👟</span>
+            </div>
+            <div class="ring-wrapper">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="58" fill="none" stroke="rgba(124,58,237,0.12)" stroke-width="12"/>
+                <circle id="steps-ring" class="progress-ring-circle" cx="70" cy="70" r="58"
+                  fill="none" stroke="url(#stepsGrad)" stroke-width="12" stroke-linecap="round"
+                  stroke-dasharray="364.4" stroke-dashoffset="364.4"/>
+                <defs>
+                  <linearGradient id="stepsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#A78BFA"/>
+                    <stop offset="100%" stop-color="#7C3AED"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="ring-center">
+                <div class="ring-val" id="steps-val">0</div>
+                <div class="ring-unit">steps</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input type="number" id="steps-input" class="form-control" placeholder="Enter steps" min="0" max="50000" style="flex:1">
+              <button class="btn btn-primary btn-sm" onclick="updateSteps()" data-i18n="update">Update</button>
+            </div>
+          </div>
+
+          <!-- Water -->
+          <div class="fitness-card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:16px;font-weight:700" data-i18n="water_intake">Water Intake</div>
+                <div style="font-size:13px;color:var(--text-secondary)" data-i18n="goal_8">Goal: 8 glasses/day</div>
+              </div>
+              <span style="font-size:28px">💧</span>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:32px;font-weight:800;color:var(--secondary)" id="water-count">0</div>
+              <div style="font-size:13px;color:var(--text-secondary)" data-i18n="glasses">/ 8 glasses</div>
+            </div>
+            <div class="water-glasses" id="water-glasses"></div>
+            <div style="display:flex;gap:10px;justify-content:center;margin-top:4px">
+              <button class="btn btn-secondary btn-sm" onclick="addWater()" data-i18n="add_glass">+ Glass</button>
+              <button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:var(--danger);border:1.5px solid rgba(239,68,68,0.3)" onclick="resetWater()" data-i18n="reset">Reset</button>
+            </div>
+          </div>
+
+          <!-- BMI -->
+          <div class="fitness-card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:16px;font-weight:700">BMI Calculator</div>
+                <div style="font-size:13px;color:var(--text-secondary)">Body Mass Index</div>
+              </div>
+              <span style="font-size:28px">⚖️</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Height (cm)</label>
+                <input type="number" id="bmi-height" class="form-control" placeholder="170" min="50" max="250">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Weight (kg)</label>
+                <input type="number" id="bmi-weight" class="form-control" placeholder="70" min="10" max="300">
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="calculateBMI()" style="align-self:flex-start">Calculate</button>
+            <div id="bmi-result" style="display:none">
+              <div class="bmi-bar"><div class="bmi-marker" id="bmi-marker"></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-top:4px">
+                <span>Underweight</span><span>Normal</span><span>Overweight</span><span>Obese</span>
+              </div>
+              <div style="margin-top:12px;text-align:center">
+                <span style="font-size:28px;font-weight:800;color:var(--primary)" id="bmi-val">0</span>
+                <span style="font-size:13px;color:var(--text-secondary)"> kg/m²</span>
+                <div style="font-size:14px;font-weight:600;margin-top:4px" id="bmi-category"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Health Tips -->
+          <div class="fitness-card" style="grid-column:span 1">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px" data-i18n="health_tips">Daily Health Tips</div>
+            <div class="health-tips-carousel" id="fitness-tips"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════ PROFILE ══════════════ -->
+      <section class="section-panel" id="section-profile">
+        <div class="section-title" data-i18n="profile_title">👤 My Profile</div>
+        <div class="section-subtitle" data-i18n="profile_sub">Manage your personal and health information.</div>
+
+        <!-- Profile Hero -->
+        <div class="profile-hero animate-fadeIn">
+          <div class="profile-avatar-large" id="profile-avatar-large">?</div>
+          <div>
+            <div class="profile-name" id="profile-name-display">Loading…</div>
+            <div class="profile-email" id="profile-email-display">—</div>
+            <div style="margin-top:12px">
+              <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.35)" onclick="toggleEditProfile()" id="edit-profile-btn" data-i18n="edit_profile">✏️ Edit Profile</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Grid -->
+        <div class="profile-grid" id="profile-grid"></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script src="/js/toast.js"></script>
+<script src="/js/i18n.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/voice.js"></script>
+<script src="/js/medicines.js"></script>
+<script src="/js/appointments.js"></script>
+<script src="/js/symptoms.js"></script>
+<script src="/js/fitness.js"></script>
+<script src="/js/profile.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

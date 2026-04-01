@@ -1,0 +1,96 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Jigar",
+      "email": "jigar@medicare.com",
+      "password": "$2a$10$PWMjbOsKkdYgOXMk3P0bJ.bmsugqT.TnRLOVBPLCvai33TCQCFLTO",
+      "created_at": "2026-03-25T06:16:56.080Z"
+    },
+    {
+      "id": 2,
+      "name": "Jigar Patel",
+      "email": "jigar_patel@medicare.com",
+      "password": "$2a$10$juKAsQh2PIW9EMn2eQKHEOmJvj5DN7Q29ZU0AnfyFgSznnFFmUh3m",
+      "created_at": "2026-03-25T06:46:53.181Z"
+    }
+  ],
+  "profile": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "dob": "2007-05-10",
+      "gender": "Male",
+      "blood_group": "B+",
+      "height": "171",
+      "weight": "62",
+      "allergies": "mushroom allergies",
+      "emergency_contact": "8799657803"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "dob": null,
+      "gender": null,
+      "blood_group": null,
+      "height": null,
+      "weight": null,
+      "allergies": null,
+      "emergency_contact": null
+    }
+  ],
+  "medicines": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "name": "Aspirin",
+      "dosage": "250mg",
+      "time": "11:55",
+      "frequency": "daily",
+      "notes": "before lunch",
+      "created_at": "2026-03-25T06:18:22.858Z"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "name": "Aspirin",
+      "dosage": "500mg",
+      "time": "09:00",
+      "frequency": "daily",
+      "notes": "",
+      "created_at": "2026-03-25T06:47:40.324Z"
+    }
+  ],
+  "appointments": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "doctor_name": "Dr. Nikhil",
+      "specialization": "Gynecologist",
+      "date": "2026-03-25",
+      "time": "12:00",
+      "location": "Sola Civil",
+      "notes": "Bring blood report",
+      "status": "upcoming",
+      "created_at": "2026-03-25T06:20:19.723Z"
+    },
+    {
+      "id": 2,
+      "user_id": 2,
+      "doctor_name": "Dr. Sharma",
+      "specialization": "Dermatologist",
+      "date": "2026-04-10",
+      "time": "10:30",
+      "location": "",
+      "notes": "",
+      "status": "upcoming",
+      "created_at": "2026-03-25T06:48:38.465Z"
+    }
+  ],
+  "_counters": {
+    "users": 2,
+    "profile": 2,
+    "medicines": 2,
+    "appointments": 2
+  }
+}

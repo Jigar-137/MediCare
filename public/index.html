@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediCare 2.0 – Smart Health Assist</title>
+  <meta name="description" content="Your personal digital health companion. Manage medicines, book appointments, check symptoms, and track fitness with MediCare 2.0.">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+
+<div class="auth-page">
+  <!-- Hero Side -->
+  <div class="auth-hero">
+    <div class="auth-hero-inner">
+      <div class="auth-logo">🏥</div>
+      <h1>MediCare 2.0</h1>
+      <p>Your intelligent health companion — manage medicines, track fitness, book appointments and more.</p>
+      <div class="auth-features">
+        <div class="auth-feature-item">
+          <span class="feature-icon">💊</span>
+          Smart Medicine Reminders with Voice Alerts
+        </div>
+        <div class="auth-feature-item">
+          <span class="feature-icon">🩺</span>
+          AI-Powered Symptom Guidance
+        </div>
+        <div class="auth-feature-item">
+          <span class="feature-icon">📅</span>
+          Doctor Appointment Booking
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Side -->
+  <div class="auth-form-side">
+    <div class="auth-box">
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" data-i18n="login">Login</button>
+        <button class="auth-tab" id="tab-register" onclick="switchTab('register')" data-i18n="register">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <div id="login-section">
+        <h2 data-i18n="welcome_back">Welcome Back 👋</h2>
+        <p class="auth-subtitle">New to MediCare? <span onclick="switchTab('register')" data-i18n="create_account">Create an account</span></p>
+        <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label" data-i18n="email">Email Address</label>
+            <div class="input-group">
+              <span class="input-icon">✉️</span>
+              <input type="email" id="login-email" class="form-control" placeholder="you@example.com" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="password">Password</label>
+            <div class="input-group">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="login-password" class="form-control" placeholder="••••••••" required minlength="6">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%">
+            <span data-i18n="sign_in">Sign In</span>
+          </button>
+          <p class="auth-terms">By signing in you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a></p>
+        </form>
+      </div>
+
+      <!-- Register Form -->
+      <div id="register-section" style="display:none">
+        <h2 data-i18n="create_account_title">Create Account 🌟</h2>
+        <p class="auth-subtitle">Already have an account? <span onclick="switchTab('login')" data-i18n="sign_in_link">Sign in</span></p>
+        <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label" data-i18n="full_name">Full Name</label>
+            <div class="input-group">
+              <span class="input-icon">👤</span>
+              <input type="text" id="reg-name" class="form-control" placeholder="John Doe" required minlength="2">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="email">Email Address</label>
+            <div class="input-group">
+              <span class="input-icon">✉️</span>
+              <input type="email" id="reg-email" class="form-control" placeholder="you@example.com" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="password">Password</label>
+            <div class="input-group">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="reg-password" class="form-control" placeholder="Min 6 characters" required minlength="6">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="confirm_password">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="reg-confirm" class="form-control" placeholder="Repeat password" required minlength="6">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" id="register-btn" style="width:100%">
+            <span data-i18n="get_started">Get Started</span>
+          </button>
+          <p class="auth-terms">By registering you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script src="/js/toast.js"></script>
+<script src="/js/i18n.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>
