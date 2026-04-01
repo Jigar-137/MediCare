@@ -7,6 +7,9 @@
   <meta name="description" content="MediCare 2.0 Dashboard - Manage your health intelligently.">
   <link rel="stylesheet" href="/css/global.css">
   <link rel="stylesheet" href="/css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#7C3AED">
 </head>
 <body>
 <div class="dashboard-page">
@@ -225,21 +228,23 @@
         <div class="section-title" data-i18n="appointments_title">📅 Appointments</div>
         <div class="section-subtitle" data-i18n="appointments_sub">Book and manage your doctor appointments.</div>
 
-        <!-- Add Form -->
-        <div class="add-panel">
-          <h3 data-i18n="book_appointment">Book Appointment</h3>
-          <form id="appointment-form" onsubmit="addAppointment(event)">
+        <!-- Smart Booking Flow -->
+        <div class="add-panel" id="booking-wizard">
+          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+             <h3 data-i18n="book_appointment" style="margin:0;">Book Appointment</h3>
+             <div id="booking-step-indicator" style="font-size: 13px; font-weight: 600; color: var(--primary); background: var(--bg-overlay); padding: 4px 10px; border-radius: 12px;">Step 1 of 3</div>
+          </div>
+          
+          <!-- Step 1: Filter -->
+          <div id="booking-step-1" class="booking-step" style="animation: fadeIn 0.3s ease;">
             <div class="form-row" style="margin-bottom:16px">
               <div class="form-group">
-                <label class="form-label" data-i18n="doctor_name">Doctor Name</label>
-                <input type="text" id="appt-doctor" class="form-control" placeholder="Dr. Sharma" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label" data-i18n="specialization">Specialization</label>
-                <select id="appt-spec" class="form-control">
+                <label class="form-label">Specialization</label>
+                <select id="smart-appt-domain" class="form-control">
+                  <option value="">Select Domain...</option>
                   <option value="General Physician">General Physician</option>
                   <option value="Cardiologist">Cardiologist</option>
-                  <option value="Dermatologist">Dermatologist</option>
+                  <option value="Dentist">Dentist</option>
                   <option value="Neurologist">Neurologist</option>
                   <option value="Orthopedist">Orthopedist</option>
                   <option value="Gynecologist">Gynecologist</option>
@@ -247,34 +252,64 @@
                   <option value="ENT Specialist">ENT Specialist</option>
                   <option value="Ophthalmologist">Ophthalmologist</option>
                   <option value="Psychiatrist">Psychiatrist</option>
-                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">City</label>
+                <select id="smart-appt-city" class="form-control">
+                  <option value="Ahmedabad" selected>Ahmedabad</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Bangalore">Bangalore</option>
                 </select>
               </div>
             </div>
-            <div class="form-row" style="margin-bottom:16px">
-              <div class="form-group">
-                <label class="form-label" data-i18n="date">Date</label>
-                <input type="date" id="appt-date" class="form-control" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label" data-i18n="time">Time</label>
-                <input type="time" id="appt-time" class="form-control" required>
+            <button class="btn btn-primary" onclick="proceedToStep2()">🔍 Find Doctors</button>
+          </div>
+
+          <!-- Step 2: Select Doctor -->
+          <div id="booking-step-2" class="booking-step" style="display:none; animation: fadeIn 0.3s ease;">
+            <div style="margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">Select a doctor to view their availability:</div>
+            <div id="doctor-results-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px; max-height: 380px; overflow-y:auto; padding-right:4px;">
+              <!-- Dynamic Cards here -->
+            </div>
+            <button class="btn btn-secondary" onclick="backToStep(1)">🔙 Back</button>
+          </div>
+
+          <!-- Step 3: Select Date & Time slot -->
+          <div id="booking-step-3" class="booking-step" style="display:none; animation: fadeIn 0.3s ease;">
+            <div id="selected-doctor-summary" style="margin-bottom:20px; padding: 16px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: var(--radius-md); display:flex; align-items:center; gap:16px;">
+               <!-- Populated dynamically -->
+            </div>
+            
+            <div class="form-group" style="margin-bottom:20px">
+              <label class="form-label">Select Date</label>
+              <input type="date" id="smart-appt-date" class="form-control" onchange="loadTimeSlots()" style="max-width: 200px;">
+            </div>
+
+            <div id="time-slots-container" style="display:none; margin-bottom: 24px;">
+              <label class="form-label">Available Slots</label>
+              <div id="time-slots-grid" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+                <!-- dynamic pills -->
               </div>
             </div>
-            <div class="form-row" style="margin-bottom:20px">
-              <div class="form-group">
-                <label class="form-label" data-i18n="location">Location / Hospital</label>
-                <input type="text" id="appt-location" class="form-control" placeholder="City Hospital">
-              </div>
-              <div class="form-group">
-                <label class="form-label" data-i18n="notes">Notes</label>
-                <input type="text" id="appt-notes" class="form-control" placeholder="Bring reports…">
-              </div>
+            
+            <div style="display:flex; gap: 12px;">
+              <button class="btn btn-secondary" onclick="backToStep(2)">🔙 Back</button>
+              <button class="btn btn-primary" id="confirm-booking-btn" onclick="confirmBooking()" disabled>📅 Confirm Booking</button>
             </div>
-            <button type="submit" class="btn btn-primary" id="add-appt-btn">
-              📅 <span data-i18n="book_btn">Book Appointment</span>
-            </button>
-          </form>
+          </div>
+          
+          <!-- Step 4: Success -->
+          <div id="booking-step-4" class="booking-step" style="display:none; text-align: center; padding: 24px 12px; animation: scaleIn 0.4s ease;">
+            <div style="font-size: 64px; margin-bottom: 16px;">🎉</div>
+            <h2 style="font-size: 24px; margin-bottom: 8px; color: var(--primary)">Booking Confirmed!</h2>
+            <div id="success-summary-text" style="font-size: 15px; color: var(--text-secondary); margin-bottom: 28px; line-height: 1.6; max-width: 400px; margin-left: auto; margin-right: auto;">
+              <!-- Summary -->
+            </div>
+            <button class="btn btn-outline" onclick="resetBookingFlow()" style="margin-right:8px;">Book Another</button>
+            <button class="btn btn-primary" onclick="navigateTo('home')">Go to Dashboard</button>
+          </div>
         </div>
 
         <!-- Timeline -->
@@ -285,6 +320,34 @@
       <section class="section-panel" id="section-fitness">
         <div class="section-title" data-i18n="fitness_title">🏃 Fitness & Health</div>
         <div class="section-subtitle" data-i18n="fitness_sub">Track your daily activity and maintain a healthy lifestyle.</div>
+
+        <!-- Master Goal Progress & AI Suggestion -->
+        <div class="fitness-master-goal" style="background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(52,211,153,0.05)); padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
+          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-weight: 700; font-size: 16px;">Daily Master Progress</span>
+            <span id="master-progress-pct" style="font-weight: 800; color: var(--primary); font-size:18px;">0%</span>
+          </div>
+          <div style="width: 100%; height: 12px; border-radius: 6px; background: rgba(0,0,0,0.05); overflow: hidden;">
+            <div id="master-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+          </div>
+          <div id="ai-suggestion" style="margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--text-secondary); display:flex; gap:8px; align-items:center;">
+            💡 <span>Let's get moving!</span>
+          </div>
+        </div>
+
+        <!-- Automation Controls -->
+        <div style="display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; background: #fff; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+          <label id="auto-track-label" style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px; cursor:pointer;">
+            <input type="checkbox" id="auto-track-steps" onchange="toggleAutoSteps()" style="width:18px;height:18px;accent-color:var(--primary);">
+            Auto-Track Steps
+            <span id="sensor-status-dot" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ccc; margin-left:4px" title="Not Active"></span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px; cursor:pointer;">
+            <input type="checkbox" id="water-reminder-toggle" onchange="toggleWaterReminder()" style="width:18px;height:18px;accent-color:var(--secondary);">
+            Water Reminders (Hourly)
+          </label>
+          <div style="font-size: 13px; color: var(--text-secondary); align-self:center; font-style:italic;" id="next-water-reminder"></div>
+        </div>
 
         <div class="fitness-grid">
           <!-- Steps -->
@@ -314,8 +377,9 @@
                 <div class="ring-unit">steps</div>
               </div>
             </div>
+            <div id="cal-estimate" style="text-align: center; margin-top: -10px; margin-bottom: 12px; font-size: 14px; color: #f59e0b; font-weight: 700;">🔥 0 kcal burned</div>
             <div style="display:flex;gap:10px;align-items:center">
-              <input type="number" id="steps-input" class="form-control" placeholder="Enter steps" min="0" max="50000" style="flex:1">
+              <input type="number" id="steps-input" class="form-control" placeholder="Manual steps" min="0" max="50000" style="flex:1">
               <button class="btn btn-primary btn-sm" onclick="updateSteps()" data-i18n="update">Update</button>
             </div>
           </div>
@@ -372,6 +436,33 @@
               </div>
             </div>
           </div>
+          
+          <!-- 7-Day History Chart -->
+          <div class="fitness-card" style="grid-column: 1 / -1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div style="font-size:16px;font-weight:700">7-Day History</div>
+              <span style="font-size:24px">📊</span>
+            </div>
+            <div style="position: relative; height:250px; width:100%">
+              <canvas id="fitnessChart"></canvas>
+            </div>
+          </div>
+          
+          <!-- Weekly Insights HUD -->
+          <div class="fitness-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(124,58,237,0.03), rgba(6,182,212,0.03)); border: 1px dashed var(--border);">
+            <div style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">📈 Weekly Insights</div>
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 150px;">
+                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Avg Daily Steps</div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 4px;" id="insight-avg-steps">—</div>
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Water Consistency</div>
+                <div style="font-size: 24px; font-weight: 800; color: #0891B2; margin-top: 4px;" id="insight-water-consistency">—</div>
+              </div>
+            </div>
+            <div id="insight-summary-msg" style="margin-top: 16px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Waiting for more data...</div>
+          </div>
 
           <!-- Health Tips -->
           <div class="fitness-card" style="grid-column:span 1">
@@ -406,18 +497,44 @@
   </div>
 </div>
 
-<!-- Toast -->
-<div id="toast-container"></div>
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-<script src="/js/toast.js"></script>
-<script src="/js/i18n.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/voice.js"></script>
-<script src="/js/medicines.js"></script>
+<!-- AI Assistant Widget -->
+<div id="ai-fab" onclick="toggleAIPanel()">
+  <span style="font-size:24px">🧠</span>
+</div>
+
+<div id="ai-floating-panel" style="display:none;">
+  <div class="ai-header">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:20px;">🧠</span>
+      <div style="font-weight:700">MediCare AI</div>
+    </div>
+    <button onclick="closeAIPanel()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer; line-height:1;">&times;</button>
+  </div>
+  <div id="ai-chat-content" class="ai-content">
+  </div>
+  <div class="ai-suggestions">
+    <span style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:4px; display:block;">SUGGESTIONS</span>
+    <button onclick="askAI('How is my health today?')">How is my health today?</button>
+    <button onclick="askAI('Am I meeting my goals?')">Am I meeting my goals?</button>
+    <button onclick="askAI('Should I book a doctor?')">Should I book a doctor?</button>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="/js/utils.js"></script>
+<script src="/js/ai.js"></script>
+<script src="/js/dashboard.js"></script>
 <script src="/js/appointments.js"></script>
+<script src="/js/medicines.js"></script>
 <script src="/js/symptoms.js"></script>
 <script src="/js/fitness.js"></script>
 <script src="/js/profile.js"></script>
-<script src="/js/dashboard.js"></script>
+<script src="/js/voice.js"></script>
+<script src="/js/toast.js"></script>
+<script src="/js/i18n.js"></script>
+<script src="/js/api.js"></script>
 </body>
 </html>

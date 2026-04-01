@@ -1,0 +1,152 @@
+// ── Smart Health AI Engine (`ai.js`) ──
+
+const userName = "Jigar";
+
+// ── UI Interactions ──
+function toggleAIPanel() {
+  const panel = document.getElementById('ai-floating-panel');
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'flex';
+    if (!document.getElementById('ai-chat-content').innerHTML.trim()) {
+      showSmartGreeting();
+    }
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function closeAIPanel() {
+  document.getElementById('ai-floating-panel').style.display = 'none';
+}
+
+function appendAIMessage(sender, message) {
+  const content = document.getElementById('ai-chat-content');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${sender === 'ai' ? 'ai-bubble' : 'user-bubble'}`;
+  div.innerHTML = message;
+  content.appendChild(div);
+  content.scrollTop = content.scrollHeight;
+}
+
+function showSmartGreeting() {
+  const h = new Date().getHours();
+  let greeting = 'Good morning';
+  if (h >= 12 && h < 17) greeting = 'Good afternoon';
+  else if (h >= 17) greeting = 'Good evening';
+  
+  const msg = `👋 ${greeting} ${userName}!<br><br>I'm your MediCare AI companion. I constantly monitor your steps, water, symptoms, and appointments.<br><br>You can ask me things like:<br>• <i>"How is my health today?"</i><br>• <i>"Should I book a doctor?"</i>`;
+  appendAIMessage('ai', msg);
+}
+
+// ── Intelligence Logic ──
+
+async function askAI(query) {
+  if (!query) return;
+  appendAIMessage('user', query);
+  
+  const lower = query.toLowerCase();
+  let responseText = "";
+  
+  // 1. Context Generator
+  if (lower.includes('health today') || lower.includes('my health') || lower.includes('meeting my goals')) {
+    responseText = evaluateHealthContext();
+  } 
+  // 2. Doctor / Symptom Generator
+  else if (lower.includes('book a doctor') || lower.includes('consult a doctor') || lower.includes('doctor')) {
+    responseText = generateDoctorRecommendation();
+  }
+  // 3. Water Specific
+  else if (lower.includes('drink more water') || lower.includes('water')) {
+    const w = parseInt(localStorage.getItem('medicare_water') || 0);
+    if (w >= 8) responseText = `You've already crushed your water goal with ${w} glasses, ${userName}! 💧`;
+    else if (w >= 4) responseText = `You're at ${w} glasses. You need ${8-w} more to hit your goal. Keep going!`;
+    else responseText = `You're significantly behind on water today, ${userName}. Please drink a glass right now!`;
+  }
+  // Fallback
+  else {
+    responseText = `I'm still learning, ${userName}. But I can tell you about your daily goals or recommend a doctor based on your symptoms!`;
+  }
+  
+  // Simulated small delay for "thinking"
+  setTimeout(() => {
+    appendAIMessage('ai', responseText);
+    if (typeof speak === 'function') {
+      const plainTextForVoice = responseText.replace(/<[^>]+>/g, '').replace(/👉/g, '');
+      speak(plainTextForVoice);
+    }
+  }, 600);
+}
+
+// Global hook for Voice module to pipe to AI UI
+window.pipeToAI = function(query) {
+  const panel = document.getElementById('ai-floating-panel');
+  if (panel && (panel.style.display === 'none' || !panel.style.display)) {
+    toggleAIPanel();
+  }
+  askAI(query);
+}
+
+function evaluateHealthContext() {
+  const steps = parseInt(localStorage.getItem('medicare_steps') || 0);
+  const water = parseInt(localStorage.getItem('medicare_water') || 0);
+  let symptomsStr = JSON.parse(localStorage.getItem('medicare_symptoms_history') || '[]');
+  const recentSymptoms = symptomsStr.length > 0 ? symptomsStr[symptomsStr.length-1].symptoms : [];
+  
+  let stringBlocks = [];
+  
+  if (steps < 4000) stringBlocks.push(`You've only walked ${steps.toLocaleString()} steps today. Try taking a short walk!`);
+  else stringBlocks.push(`Great job walking ${steps.toLocaleString()} steps today!`);
+  
+  if (water < 8) stringBlocks.push(`Your water intake is a bit low (${water} glasses).`);
+  else stringBlocks.push(`Your water intake is perfect 👍.`);
+  
+  if (recentSymptoms && recentSymptoms.length > 0) {
+    stringBlocks.push(`I also noticed you recently reported <b>${recentSymptoms.join(', ')}</b>.`);
+    if (steps < 4000) {
+      stringBlocks.push(`<br>👉 Given your fatigue/symptoms and low steps, please rest or consult a doctor. <a href="#" onclick="closeAIPanel(); navigateTo('appointments'); return false;">Book Appointment</a>`);
+    } else {
+      stringBlocks.push(`<br>👉 Keep an eye on those symptoms. Consider a quick check-up!`);
+    }
+  }
+  
+  return `${userName}, ` + stringBlocks.join(' ');
+}
+
+function generateDoctorRecommendation() {
+  let symptomsStr = JSON.parse(localStorage.getItem('medicare_symptoms_history') || '[]');
+  const recentSymptoms = symptomsStr.length > 0 ? symptomsStr[symptomsStr.length-1].symptoms.join(', ').toLowerCase() : '';
+  
+  let recSpec = 'General Physician';
+  if (recentSymptoms.includes('chest') || recentSymptoms.includes('heart')) recSpec = 'Cardiologist';
+  else if (recentSymptoms.includes('teeth') || recentSymptoms.includes('tooth') || recentSymptoms.includes('gum')) recSpec = 'Dentist';
+  else if (recentSymptoms.includes('bone') || recentSymptoms.includes('joint') || recentSymptoms.includes('back')) recSpec = 'Orthopedist';
+  else if (recentSymptoms.includes('headache') || recentSymptoms.includes('dizz')) recSpec = 'Neurologist';
+  
+  if (recentSymptoms) {
+    return `Based on your recent complaint of <b>${recentSymptoms}</b>, I strongly recommend you book a <b>${recSpec}</b>.<br><br><button class="btn btn-primary btn-sm" onclick="closeAIPanel(); navigateTo('appointments'); setTimeout(()=>document.getElementById('smart-appt-domain').value='${recSpec}',100);">Book ${recSpec}</button>`;
+  }
+  return `You have no recent severe symptoms recorded. However, an annual check-up with a <b>General Physician</b> is always a great idea!<br><br><button class="btn btn-outline btn-sm" onclick="closeAIPanel(); navigateTo('appointments')">Go to Appointments</button>`;
+}
+
+// ── Smart Dynamic Timers ──
+window.getDynamicWaterIntervalMs = function() {
+  // Instead of a rigid 1-hour interval (3600000 ms), the AI determines frequency!
+  const w = parseInt(localStorage.getItem('medicare_water') || 0);
+  const hour = new Date().getHours();
+  
+  // Standard 60 mins
+  let intervalMs = 60 * 60 * 1000;
+  
+  // If it's already 4 PM (16:00) and they've drank less than 3 glasses... they are severely behind!
+  if (hour >= 16 && w <= 3) {
+    console.log("[AI] User critically behind on water. Shrinking reminder timer to 45 mins.");
+    intervalMs = 45 * 60 * 1000;
+  }
+  // If they are ahead of schedule early in the day (e.g., 6 glasses by noon)
+  else if (hour <= 12 && w >= 6) {
+    console.log("[AI] User ahead on water. Relaxing reminder timer to 1.5 hours.");
+    intervalMs = 90 * 60 * 1000; 
+  }
+  
+  return intervalMs;
+}

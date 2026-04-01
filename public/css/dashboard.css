@@ -330,7 +330,42 @@
 }
 .medicine-card-footer { display: flex; justify-content: space-between; align-items: center; }
 
-/* ── Appointment Timeline ── */
+/* ── Appointment Timeline & Booking ── */
+.doctor-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.doctor-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.doctor-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-overlay); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.doctor-info { flex: 1; overflow: hidden; }
+.doctor-name { font-size: 15px; font-weight: 700; color: var(--text-primary); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 2px; }
+.doctor-spec { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.doctor-meta { display: flex; gap: 8px; font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.doctor-meta span { display: flex; align-items: center; gap: 3px; background: var(--bg-overlay); padding: 2px 6px; border-radius: 4px; }
+.doctor-meta .rating { color: #D97706; background: rgba(245,158,11,0.1); }
+
+.time-slot {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+.time-slot:hover:not(.disabled) { border-color: var(--primary-light); background: var(--bg-overlay); }
+.time-slot.selected { border-color: var(--primary); background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.25); }
+.time-slot.disabled { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; background: rgba(0,0,0,0.03); border-color: transparent; }
+
 .timeline { display: flex; flex-direction: column; gap: var(--space-md); }
 .timeline-item {
   display: flex;
@@ -604,4 +639,109 @@
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .stat-number { font-size: 28px; }
   .section-title { font-size: 22px; }
+}
+
+/* ── AI Assistant ── */
+#ai-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #a855f7);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: pulse 2s infinite;
+}
+#ai-fab:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6); }
+
+#ai-floating-panel {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  width: 320px;
+  max-width: 90vw;
+  height: 480px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+  backdrop-filter: blur(16px);
+}
+
+.ai-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-msg {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  max-width: 85%;
+}
+
+.user-bubble {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-bubble {
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.ai-suggestions {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-overlay);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-suggestions button {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 16px;
+  font-size: 13px;
+  color: var(--primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-suggestions button:hover {
+  background: var(--primary);
+  color: white;
 }

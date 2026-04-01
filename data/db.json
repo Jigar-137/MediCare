@@ -13,6 +13,13 @@
       "email": "jigar_patel@medicare.com",
       "password": "$2a$10$juKAsQh2PIW9EMn2eQKHEOmJvj5DN7Q29ZU0AnfyFgSznnFFmUh3m",
       "created_at": "2026-03-25T06:46:53.181Z"
+    },
+    {
+      "id": 3,
+      "name": "JIgar",
+      "email": "jigar@medicar.com",
+      "password": "$2a$10$4dRDLFiaLcNwh.mbEOLy1e.P1oT4fb012OgztCv3o/PaI3gSJPkMO",
+      "created_at": "2026-04-01T12:38:08.286Z"
     }
   ],
   "profile": [
@@ -30,6 +37,17 @@
     {
       "id": 2,
       "user_id": 2,
+      "dob": null,
+      "gender": null,
+      "blood_group": null,
+      "height": null,
+      "weight": null,
+      "allergies": null,
+      "emergency_contact": null
+    },
+    {
+      "id": 3,
+      "user_id": 3,
       "dob": null,
       "gender": null,
       "blood_group": null,
@@ -59,6 +77,26 @@
       "frequency": "daily",
       "notes": "",
       "created_at": "2026-03-25T06:47:40.324Z"
+    },
+    {
+      "id": 13,
+      "user_id": 3,
+      "name": "Paracetamol.",
+      "dosage": "1 pill",
+      "time": "19:40",
+      "frequency": "daily",
+      "notes": "Added via voice",
+      "created_at": "2026-04-01T14:08:17.406Z"
+    },
+    {
+      "id": 14,
+      "user_id": 3,
+      "name": "Paracetamol.",
+      "dosage": "1 pill",
+      "time": "21:39",
+      "frequency": "daily",
+      "notes": "Added via voice",
+      "created_at": "2026-04-01T16:08:32.528Z"
     }
   ],
   "appointments": [
@@ -88,9 +126,9 @@
     }
   ],
   "_counters": {
-    "users": 2,
-    "profile": 2,
-    "medicines": 2,
-    "appointments": 2
+    "users": 3,
+    "profile": 3,
+    "medicines": 14,
+    "appointments": 5
   }
 }

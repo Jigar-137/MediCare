@@ -91,12 +91,30 @@ function scheduleReminder(medicine) {
   if (target <= now) target.setDate(target.getDate() + 1);
   const delay = target - now;
   medicineTimers[medicine.id] = setTimeout(() => {
+    const title = 'MediCare Reminder ⏰';
     const msg = `Time to take ${medicine.name}, ${medicine.dosage}`;
+    
+    // Fallback UI toast
     showToast(`⏰ ${msg}`, 'info', 6000);
     speak(msg);
+
+    // Native Browser Notification & Sound
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body: msg, icon: '🏥' });
+    }
+    try {
+      // Provide a generic alert chime url
+      new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play();
+    } catch (e) { console.warn('Audio play failed', e); }
+
     // Re-schedule for next day
     scheduleReminder(medicine);
   }, delay);
+}
+
+// Request permission on load
+if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+  Notification.requestPermission();
 }
 
 // ── Helpers ──

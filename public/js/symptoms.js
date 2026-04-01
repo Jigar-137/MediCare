@@ -101,3 +101,25 @@ function clearSymptoms() {
   document.getElementById('symptom-results').style.display = 'none';
   initSymptomChips();
 }
+
+window.setSymptomsFromVoice = function(symptomsList) {
+  selectedSymptoms = Array.from(new Set([...selectedSymptoms, ...symptomsList]));
+  initSymptomChips();
+  setTimeout(() => {
+    selectedSymptoms.forEach(s => {
+      const chip = Array.from(document.querySelectorAll('.symptom-chip')).find(c => c.textContent.toLowerCase() === s.toLowerCase());
+      if (chip) chip.classList.add('selected');
+      else {
+        // Add custom chip if not found in common list
+        const container = document.getElementById('symptom-chips');
+        if (container) {
+          const btn = document.createElement('button');
+          btn.className = 'symptom-chip selected';
+          btn.textContent = s.charAt(0).toUpperCase() + s.slice(1) + ' ✕';
+          btn.onclick = () => { selectedSymptoms = selectedSymptoms.filter(x => x !== s); btn.remove(); };
+          container.appendChild(btn);
+        }
+      }
+    });
+  }, 100);
+};
