@@ -1,7 +1,16 @@
 // ── Smart Health AI Engine (`ai.js`) ──
-
-const userName = "Jigar";
-
+function getUserName() {
+  try {
+    const userStr = localStorage.getItem('medicare_user');
+    if (userStr) {
+      const u = JSON.parse(userStr);
+      if (u && u.name) {
+        return u.name.split(' ')[0]; // Return first name
+      }
+    }
+  } catch (e) {}
+  return "User";
+}
 // ── UI Interactions ──
 function toggleAIPanel() {
   const panel = document.getElementById('ai-floating-panel');
@@ -33,8 +42,7 @@ function showSmartGreeting() {
   let greeting = 'Good morning';
   if (h >= 12 && h < 17) greeting = 'Good afternoon';
   else if (h >= 17) greeting = 'Good evening';
-  
-  const msg = `👋 ${greeting} ${userName}!<br><br>I'm your MediCare AI companion. I constantly monitor your steps, water, symptoms, and appointments.<br><br>You can ask me things like:<br>• <i>"How is my health today?"</i><br>• <i>"Should I book a doctor?"</i>`;
+  const msg = `👋 ${greeting} ${getUserName()}!<br><br>I'm your MediCare AI companion. I constantly monitor your steps, water, symptoms, and appointments.<br><br>You can ask me things like:<br>• <i>"How is my health today?"</i><br>• <i>"Should I book a doctor?"</i>`;
   appendAIMessage('ai', msg);
 }
 
@@ -58,9 +66,9 @@ async function askAI(query) {
   // 3. Water Specific
   else if (lower.includes('drink more water') || lower.includes('water')) {
     const w = parseInt(localStorage.getItem('medicare_water') || 0);
-    if (w >= 8) responseText = `You've already crushed your water goal with ${w} glasses, ${userName}! 💧`;
+    if (w >= 8) responseText = `You've already crushed your water goal with ${w} glasses, ${getUserName()}! 💧`;
     else if (w >= 4) responseText = `You're at ${w} glasses. You need ${8-w} more to hit your goal. Keep going!`;
-    else responseText = `You're significantly behind on water today, ${userName}. Please drink a glass right now!`;
+    else responseText = `You're significantly behind on water today, ${getUserName()}. Please drink a glass right now!`;
   }
   // Fallback -> Always return the dynamic health report rather than an empty/weak response
   else {
@@ -95,10 +103,10 @@ function generateHealthReport() {
   
   // Check for completely empty data state
   if (steps === 0 && water === 0 && (!recentSymptoms || recentSymptoms.length === 0)) {
-    return `Hello ${userName}, your health dashboard is currently empty for today.<br><br><b>👉 My Recommendation:</b><br>To provide you with accurate insights, please track your daily steps, log your water intake, or report any symptoms. I'm ready to help!`;
+    return `Hello ${getUserName()}, your health dashboard is currently empty for today.<br><br><b>👉 My Recommendation:</b><br>To provide you with accurate insights, please track your daily steps, log your water intake, or report any symptoms. I'm ready to help!`;
   }
 
-  let report = `<b>${userName}, here's your health summary for today:</b><br><br>`;
+  let report = `<b>${getUserName()}, here's your health summary for today:</b><br><br>`;
   
   // 1. Steps Analysis
   if (steps === 0) {

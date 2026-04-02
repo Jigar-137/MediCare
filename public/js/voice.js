@@ -110,6 +110,11 @@ function processTtsQueue() {
 }
 
 function speak(text, lang) {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+  ttsQueue = [];
+  isSpeaking = false;
   ttsQueue.push({ text, lang });
   processTtsQueue();
 }
@@ -178,7 +183,6 @@ function scheduleGeneralReminder(task, delayMs, timeMsg) {
     try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
   }, delayMs);
   
-  speak(`Reminder set for ${timeMsg}.`);
   showToast(`Reminder set for ${timeMsg}`, 'success');
 }
 
@@ -218,7 +222,6 @@ async function handleVoiceCommand(transcript) {
     const name = cleanText;
     
     if (name.length > 0) {
-      speak(`Saving medicine ${name}.`);
       showToast('Saving medicine...', 'info');
 
       try {
@@ -227,13 +230,11 @@ async function handleVoiceCommand(transcript) {
           body: JSON.stringify({ name: name.charAt(0).toUpperCase() + name.slice(1), dosage: '1 pill', time: time24h, frequency: 'daily', notes: 'Added via voice' })
         });
 
-        speak(`Medicine saved for ${time24h}.`);
         showToast(`${name} saved for ${time24h}!`, 'success');
 
         if (typeof navigateTo === 'function') navigateTo('medicines');
         if (typeof loadMedicines === 'function') setTimeout(loadMedicines, 300);
       } catch (err) {
-        speak('Failed to save medicine.');
         showToast(err.message, 'error');
       }
       return;
@@ -247,7 +248,6 @@ async function handleVoiceCommand(transcript) {
     let symptomsArr = symptomsStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
 
     if (symptomsArr.length > 0) {
-      speak('Checking your symptoms.');
       showToast('Checking symptoms...', 'info');
 
       if (typeof navigateTo === 'function') navigateTo('symptoms');
@@ -265,9 +265,7 @@ async function handleVoiceCommand(transcript) {
         if (typeof renderSymptomResults === 'function') {
            setTimeout(() => renderSymptomResults(data), 500); 
         }
-        speak(data.generalAdvice);
       } catch (err) {
-        speak('Could not check symptoms. Please try again.');
         showToast(err.message, 'error');
       }
       return;
@@ -277,28 +275,21 @@ async function handleVoiceCommand(transcript) {
   // 4. INTENT: Navigation (Fallback)
   if (lower.includes('medicine') || lower.includes('दवा') || lower.includes('દવા')) {
     navigateTo('medicines');
-    speak('Opening medicines section');
   } else if (lower.includes('appointment') || lower.includes('अपॉइंटमेंट') || lower.includes('મુલાકાત')) {
     navigateTo('appointments');
-    speak('Opening appointments section');
   } else if (lower.includes('symptom') || lower.includes('लक्षण') || lower.includes('લક્ષણ')) {
     navigateTo('symptoms');
-    speak('Opening symptom checker');
   } else if (lower.includes('fitness') || lower.includes('फिटनेस') || lower.includes('ફિટ')) {
     navigateTo('fitness');
-    speak('Opening fitness tracker');
   } else if (lower.includes('profile') || lower.includes('प्रोफाइल') || lower.includes('પ્રોફ')) {
     navigateTo('profile');
-    speak('Opening your profile');
   } else if (lower.includes('home') || lower.includes('dashboard')) {
     navigateTo('home');
-    speak('Going to dashboard');
   } else {
     // General Conversational Fallback -> Route to AI
     if (typeof window.pipeToAI === 'function') {
       window.pipeToAI(transcript);
     } else {
-      speak('Command not recognized. Try saying add medicine or check symptoms.');
       showToast('Command not understood.', 'warning');
     }
   }

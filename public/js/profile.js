@@ -109,8 +109,8 @@ async function saveProfile() {
     stored.name = body.name;
     localStorage.setItem('medicare_user', JSON.stringify(stored));
     showToast('✅ Profile saved!', 'success');
-    speak('Profile saved successfully.');
-    await loadProfile();
+    
+    setTimeout(() => loadProfile(), 300);
   } catch (err) {
     showToast(err.message, 'error');
   }

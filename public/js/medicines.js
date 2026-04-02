@@ -126,13 +126,21 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
   const medicine = (window.activeMedicines && window.activeMedicines[id]) ? window.activeMedicines[id] : null;
   if (!medicine) return; 
 
-  const dynUserName = (typeof userName !== 'undefined') ? userName : 'Jigar';
+  const dynUserName = (typeof getUserName === 'function') ? getUserName() : 'User';
   const cleanName = medicine.name.replace(/</g, '').replace(/>/g, ''); 
-  const msg = `Time to take ${medicine.dosage} ${cleanName} now.`;
+  const msg = `Hi ${dynUserName}, time to take ${medicine.dosage} ${cleanName} now.`;
 
   const playAlerts = () => {
     // UI Notification Toast
     showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 6000);
+
+    // System Notification
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('MediCare Reminder ⏰', { 
+        body: `Time to take ${medicine.dosage} ${cleanName}`, 
+        icon: '🏥' 
+      });
+    }
 
     // Play Buzzer Sound
     try {
@@ -146,10 +154,23 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
     }
   };
 
+  // Prevent duplicate execution logic - keep a timestamp
+  const lastTriggerKey = `med_last_trigger_${id}`;
+  const nowMs = Date.now();
+  const lastTriggerMs = localStorage.getItem(lastTriggerKey);
+  if (lastTriggerMs && nowMs - parseInt(lastTriggerMs) < 60000) {
+    return; // Already triggered within the last minute
+  }
+  localStorage.setItem(lastTriggerKey, nowMs.toString());
+
   // If page is hidden, defer playback until it becomes visible
   if (document.visibilityState === 'visible') {
     playAlerts();
   } else {
+    // Try system notification even if hidden
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('MediCare Reminder ⏰', { body: `Time to take ${medicine.dosage} ${cleanName}`, icon: '🏥' });
+    }
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         playAlerts();
@@ -161,6 +182,30 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
 
   // Re-schedule for next day
   scheduleReminder(medicine);
+};
+
+// Add Debug Trigger for Demo
+window.triggerReminderNow = function() {
+  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+    Notification.requestPermission();
+  }
+  
+  const dynName = (typeof getUserName === 'function') ? getUserName() : 'User';
+  const msg = `Hi ${dynName}, this is a test reminder.`;
+  
+  showToast('⏰ Test Reminder Triggered', 'info', 6000);
+  
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    new Notification('MediCare Test ⏰', { body: msg, icon: '🏥' });
+  }
+
+  try {
+    new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e => console.warn('Audio play blocked:', e));
+  } catch(e) {}
+
+  if (typeof speak === 'function') {
+    setTimeout(() => speak(msg), 400);
+  }
 };
 
 // Request permission on load

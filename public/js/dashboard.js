@@ -78,8 +78,7 @@ function logout() {
   if (!confirm('Are you sure you want to logout?')) return;
   localStorage.removeItem('medicare_token');
   localStorage.removeItem('medicare_user');
-  speak('Goodbye! Stay healthy.');
-  window.location.href = '/';
+  window.location.href = '/index.html';
 }
 
 // ── Init ──
