@@ -1,7 +1,8 @@
 /* ── Dashboard Layout ── */
 .dashboard-page {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--bg-body);
 }
 
@@ -141,7 +142,8 @@
   margin-left: 260px;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 /* ── Topbar ── */
@@ -213,19 +215,32 @@
 /* ── Page Content ── */
 .page-content {
   flex: 1;
-  padding: 32px;
+  padding: 16px 32px;
+  display: flex;
+  flex-direction: column;
 }
 .section-panel {
   display: none;
   animation: fadeIn 0.35s ease;
+  flex: 1;
 }
 .section-panel.active { display: block; }
+.section-panel.active.flex-panel { display: flex; flex-direction: column; }
 
 /* ── Stats Cards ── */
+.dashboard-top-section {
+  overflow: hidden;
+}
+
+.health-tips-marquee {
+  width: 100%;
+  overflow: hidden;
+}
+
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-lg);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   margin-bottom: var(--space-xl);
 }
 .stat-card {
@@ -708,9 +723,10 @@
   .form-row { grid-template-columns: 1fr; }
   .welcome-banner { flex-direction: column; align-items: flex-start; }
   .welcome-banner::after { display: none; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stats-grid { grid-template-columns: 1fr; }
   .stat-number { font-size: 28px; }
   .section-title { font-size: 22px; }
 }

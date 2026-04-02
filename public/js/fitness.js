@@ -577,9 +577,37 @@ function generateSmartTips(maxCount) {
   }).join('');
 }
 
+function generateVerticalSmartTips(maxCount) {
+  let selected = [];
+  
+  if (waterCount < 6) {
+    selected.push(HEALTH_TIPS.find(t => t.type === 'hydration'));
+  } else if (stepsCount < 5000) {
+    selected.push(HEALTH_TIPS.find(t => t.type === 'activity'));
+  }
+  
+  const available = HEALTH_TIPS.filter(t => !selected.includes(t));
+  available.sort(() => 0.5 - Math.random());
+  
+  selected = [...selected, ...available].slice(0, maxCount);
+  
+  return selected.map((tip, index) => {
+    const isHighlight = (index === 0);
+    return `
+      <div class="health-tip-card-compact ${isHighlight ? 'highlight' : ''}" style="margin-bottom: 8px;">
+        <div class="health-tip-icon">${tip.icon}</div>
+        <div>
+          <div class="health-tip-title">${tip.title}</div>
+          <div class="health-tip-text">${tip.text}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderFitnessTips() {
   const el = document.getElementById('fitness-tips');
-  if (el) el.innerHTML = generateSmartTips(8);
+  if (el) el.innerHTML = generateVerticalSmartTips(4); // limit to 4 to fit in the card
 }
 
 function renderHomeTips() {
