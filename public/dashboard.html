@@ -148,6 +148,14 @@
         <div class="section-title" data-i18n="medicines_title">💊 Medicine Reminders</div>
         <div class="section-subtitle" data-i18n="medicines_sub">Add your medicines and get voice reminders at the right time.</div>
 
+        <!-- Voice Alerts Control -->
+        <div style="display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; background: var(--bg-card); padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+          <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px; cursor:pointer;">
+            <input type="checkbox" id="voice-alerts-toggle" onchange="toggleVoiceAlerts()" style="width:18px;height:18px;accent-color:var(--primary);" checked>
+            Enable Voice Alerts (TTS)
+          </label>
+        </div>
+
         <!-- Add Form -->
         <div class="add-panel">
           <h3 data-i18n="add_medicine">Add New Medicine</h3>

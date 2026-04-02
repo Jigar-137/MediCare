@@ -47,9 +47,9 @@ async function askAI(query) {
   const lower = query.toLowerCase();
   let responseText = "";
   
-  // 1. Context Generator
-  if (lower.includes('health today') || lower.includes('my health') || lower.includes('meeting my goals')) {
-    responseText = evaluateHealthContext();
+  // 1. Context Generator (Structured Health Report)
+  if (lower.includes('health today') || lower.includes('my health') || lower.includes('meeting my goals') || lower.includes('health report') || lower.includes('report')) {
+    responseText = generateHealthReport();
   } 
   // 2. Doctor / Symptom Generator
   else if (lower.includes('book a doctor') || lower.includes('consult a doctor') || lower.includes('doctor')) {
@@ -62,16 +62,17 @@ async function askAI(query) {
     else if (w >= 4) responseText = `You're at ${w} glasses. You need ${8-w} more to hit your goal. Keep going!`;
     else responseText = `You're significantly behind on water today, ${userName}. Please drink a glass right now!`;
   }
-  // Fallback
+  // Fallback -> Always return the dynamic health report rather than an empty/weak response
   else {
-    responseText = `I'm still learning, ${userName}. But I can tell you about your daily goals or recommend a doctor based on your symptoms!`;
+    responseText = generateHealthReport();
   }
   
   // Simulated small delay for "thinking"
   setTimeout(() => {
     appendAIMessage('ai', responseText);
     if (typeof speak === 'function') {
-      const plainTextForVoice = responseText.replace(/<[^>]+>/g, '').replace(/👉/g, '');
+      // Strip HTML tags and emojis for cleaner voice synthesis
+      const plainTextForVoice = responseText.replace(/<[^>]+>/g, ' ').replace(/👉/g, '').replace(/🔥|📉|🚶|💧|🧊|🌊/g, '').trim();
       speak(plainTextForVoice);
     }
   }, 600);
@@ -86,30 +87,63 @@ window.pipeToAI = function(query) {
   askAI(query);
 }
 
-function evaluateHealthContext() {
+function generateHealthReport() {
   const steps = parseInt(localStorage.getItem('medicare_steps') || 0);
   const water = parseInt(localStorage.getItem('medicare_water') || 0);
   let symptomsStr = JSON.parse(localStorage.getItem('medicare_symptoms_history') || '[]');
   const recentSymptoms = symptomsStr.length > 0 ? symptomsStr[symptomsStr.length-1].symptoms : [];
   
-  let stringBlocks = [];
-  
-  if (steps < 4000) stringBlocks.push(`You've only walked ${steps.toLocaleString()} steps today. Try taking a short walk!`);
-  else stringBlocks.push(`Great job walking ${steps.toLocaleString()} steps today!`);
-  
-  if (water < 8) stringBlocks.push(`Your water intake is a bit low (${water} glasses).`);
-  else stringBlocks.push(`Your water intake is perfect 👍.`);
-  
-  if (recentSymptoms && recentSymptoms.length > 0) {
-    stringBlocks.push(`I also noticed you recently reported <b>${recentSymptoms.join(', ')}</b>.`);
-    if (steps < 4000) {
-      stringBlocks.push(`<br>👉 Given your fatigue/symptoms and low steps, please rest or consult a doctor. <a href="#" onclick="closeAIPanel(); navigateTo('appointments'); return false;">Book Appointment</a>`);
-    } else {
-      stringBlocks.push(`<br>👉 Keep an eye on those symptoms. Consider a quick check-up!`);
-    }
+  // Check for completely empty data state
+  if (steps === 0 && water === 0 && (!recentSymptoms || recentSymptoms.length === 0)) {
+    return `Hello ${userName}, your health dashboard is currently empty for today.<br><br><b>👉 My Recommendation:</b><br>To provide you with accurate insights, please track your daily steps, log your water intake, or report any symptoms. I'm ready to help!`;
   }
+
+  let report = `<b>${userName}, here's your health summary for today:</b><br><br>`;
   
-  return `${userName}, ` + stringBlocks.join(' ');
+  // 1. Steps Analysis
+  if (steps === 0) {
+    report += `• <b>Steps:</b> You haven't tracked any steps yet. Let's get moving!<br>`;
+  } else if (steps < 4000) {
+    report += `• <b>Steps:</b> ${steps.toLocaleString()} 📉 (Below goal). A short walk would do wonders.<br>`;
+  } else if (steps < 8000) {
+    report += `• <b>Steps:</b> ${steps.toLocaleString()} 🚶 (Good progress!). Keep it up.<br>`;
+  } else {
+    report += `• <b>Steps:</b> ${steps.toLocaleString()} 🔥 (Excellent!). You're crushing it today.<br>`;
+  }
+
+  // 2. Water Intake Analysis
+  if (water === 0) {
+    report += `• <b>Water:</b> 0 glasses. Dehydration alert! Please drink water immediately.<br>`;
+  } else if (water < 4) {
+    report += `• <b>Water:</b> ${water}/8 glasses 💧 (Low). Remember to hydrate every hour.<br>`;
+  } else if (water < 8) {
+    report += `• <b>Water:</b> ${water}/8 glasses 🧊 (Almost there!). Just a few more to go.<br>`;
+  } else {
+    report += `• <b>Water:</b> ${water}/8 glasses 🌊 (Goal reached!). Perfect hydration.<br>`;
+  }
+
+  // 3. Symptoms Insight
+  let hasSevereSymptoms = false;
+  if (recentSymptoms && recentSymptoms.length > 0) {
+    report += `• <b>Symptoms:</b> You recently reported feeling <i>${recentSymptoms.join(', ')}</i>.<br>`;
+    hasSevereSymptoms = true;
+  } else {
+    report += `• <b>Symptoms:</b> No issues reported today. Feeling good!<br>`;
+  }
+
+  // 4. Clear Recommendation
+  report += `<br><b>👉 My Recommendation:</b><br>`;
+  if (hasSevereSymptoms) {
+      report += `Given your reported symptoms, please take it easy today. If your discomfort persists, I strongly advise booking a consultation.<br><br><button class="btn btn-primary btn-sm" onclick="closeAIPanel(); navigateTo('appointments')">📅 Book a Doctor</button>`;
+  } else if (steps < 4000 && water < 4) {
+      report += `Your activity and hydration are quite low today. Grab a quick glass of water and try a 10-minute walk indoors!`;
+  } else if (steps >= 8000 && water >= 8) {
+      report += `You are having a fantastic, healthy day! Keep up this active lifestyle for optimal well-being.`;
+  } else {
+      report += `You're on the right track! Try to fill the small gaps in your daily goals. A little consistent effort goes a long way.`;
+  }
+
+  return report;
 }
 
 function generateDoctorRecommendation() {

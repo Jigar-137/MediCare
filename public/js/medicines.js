@@ -5,6 +5,11 @@ async function loadMedicines() {
   const list = document.getElementById('medicines-list');
   if (!list) return;
   list.innerHTML = `<div class="skeleton" style="height:80px;margin-bottom:12px"></div><div class="skeleton" style="height:80px;margin-bottom:12px"></div>`;
+  
+  const savedVoicePref = localStorage.getItem('medicare_voice_alerts');
+  const toggleEl = document.getElementById('voice-alerts-toggle');
+  if (toggleEl) toggleEl.checked = savedVoicePref !== 'off';
+
   try {
     const medicines = await apiFetch('/api/medicines');
     renderMedicines(medicines);
@@ -92,20 +97,29 @@ function scheduleReminder(medicine) {
   const delay = target - now;
   medicineTimers[medicine.id] = setTimeout(() => {
     const title = 'MediCare Reminder ⏰';
-    const msg = `Time to take ${medicine.name}, ${medicine.dosage}`;
+    const dynUserName = (typeof userName !== 'undefined') ? userName : 'Jigar';
+    const cleanName = medicine.name.replace(/</g, '').replace(/>/g, ''); 
+    const msg = `${dynUserName}, time to take ${medicine.dosage} ${cleanName} now.`;
     
-    // Fallback UI toast
-    showToast(`⏰ ${msg}`, 'info', 6000);
-    speak(msg);
+    // UI Notification Toast
+    showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 6000);
 
-    // Native Browser Notification & Sound
+    // Native Browser Notification
     if (Notification.permission === 'granted') {
-      new Notification(title, { body: msg, icon: '🏥' });
+      new Notification(title, { body: `Take ${medicine.dosage} ${cleanName}`, icon: '🏥' });
     }
+
+    // Play Buzzer Sound
     try {
-      // Provide a generic alert chime url
       new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play();
     } catch (e) { console.warn('Audio play failed', e); }
+
+    // Text-To-Speech (Condition governed by UI toggle)
+    const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
+    if (voiceEnabled && typeof speak === 'function') {
+      // 400ms delay to let the buzzer chime fire before speaking
+      setTimeout(() => speak(msg), 400);
+    }
 
     // Re-schedule for next day
     scheduleReminder(medicine);
@@ -118,6 +132,12 @@ if (typeof Notification !== 'undefined' && Notification.permission !== 'granted'
 }
 
 // ── Helpers ──
+window.toggleVoiceAlerts = function() {
+  const isEnabled = document.getElementById('voice-alerts-toggle').checked;
+  localStorage.setItem('medicare_voice_alerts', isEnabled ? 'on' : 'off');
+  showToast(`Voice alerts ${isEnabled ? 'enabled' : 'disabled'}`, 'info');
+}
+
 function updateMedBadge(count) {
   const b = document.getElementById('med-badge'); if (b) b.textContent = count;
 }
