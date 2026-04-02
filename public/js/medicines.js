@@ -74,7 +74,6 @@ async function addMedicine(e) {
   try {
     const med = await apiFetch('/api/medicines', { method: 'POST', body: JSON.stringify({ name, dosage, time, frequency, notes }) });
     showToast(`✅ ${name} added! Reminder set for ${formatTime(time)}`, 'success');
-    speak(`${name} added. Reminder set for ${formatTime(time)}.`);
     document.getElementById('medicine-form').reset();
     await loadMedicines();
   } catch (err) {
@@ -200,8 +199,22 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
     document.addEventListener('visibilitychange', onVisibilityChange);
   }
 
-  // Re-schedule for next day
-  scheduleReminder(medicine);
+  // Re-schedule for next day via SW (avoids duplicate JS timeout)
+  const [rh, rm] = medicine.time.split(':').map(Number);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(rh, rm, 0, 0);
+  const cleanNameResched = medicine.name.replace(/</g, '').replace(/>/g, '');
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'SET_ALARM',
+      id: 'medicine_' + medicine.id,
+      timestamp: tomorrow.getTime(),
+      title: 'MediCare Reminder ⏰',
+      body: `Time to take ${medicine.dosage} ${cleanNameResched}`,
+      icon: '/icons/icon.png'
+    });
+  }
 };
 
 // Add Debug Trigger for Demo

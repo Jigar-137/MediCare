@@ -60,7 +60,10 @@ function startAlarmLoop() {
         triggered.push(alarm.id);
         self.registration.showNotification(alarm.title, {
           body: alarm.body,
-          icon: alarm.icon || '🏥',
+          icon: alarm.icon || '/icons/icon.png',
+          badge: '/icons/icon.png',
+          tag: alarm.id,          // OS deduplicates notifications with same tag
+          renotify: false,        // Don't vibrate again if same tag exists
           vibrate: [300, 100, 300]
         });
       }
@@ -73,5 +76,5 @@ function startAlarmLoop() {
         clients.forEach(client => client.postMessage({ type: 'ALARM_TRIGGERED', ids: triggered }));
       });
     }
-  }, 10000); 
+  }, 5000); // Poll every 5s for faster alarm delivery
 }

@@ -109,14 +109,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Global Service Worker Registration ──
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').then((registration) => {
-      console.log('Service Worker registered with scope:', registration.scope);
-      // Ensure the Service Worker controls the page
-      if (!navigator.serviceWorker.controller) {
-        console.log('SW not controlling page, reloading...');
-        window.location.reload();
-      }
+      console.log('✅ Service Worker registered:', registration.scope);
+      // NOTE: Do NOT reload here — SW takes control on next navigation naturally.
+      // Forcing reload causes an infinite reload loop on first visit.
     }).catch((err) => {
-      console.error('Service Worker registration failed:', err);
+      console.warn('Service Worker registration failed:', err);
     });
 
     navigator.serviceWorker.addEventListener('message', event => {
@@ -125,7 +122,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const ids = event.data.ids || [];
         ids.forEach(id => {
           if (id.startsWith('medicine_') && typeof window.triggerMedicineVoiceAndBuzzer === 'function') {
-            const medId = id.split('_')[1];
+            // Parse as integer — activeMedicines is keyed by number
+            const medId = parseInt(id.split('_')[1], 10);
             window.triggerMedicineVoiceAndBuzzer(medId);
           }
         });
@@ -139,22 +137,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// ── Debug Helper MUST be global ──
+// ── Debug helpers (kept for backwards compatibility) ──
+// Use window.testReminder() defined in medicines.js for the canonical test function.
 window.triggerMedicineAlarmNow = function() {
-  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-    new Notification('Medicine Reminder', { body: 'Take 500 mg Paracetamol now', icon: '🏥', vibrate: [300, 100, 300] });
-  } else {
-    showToast('Take 500 mg Paracetamol now', 'info', 6000);
-  }
-  
-  if (typeof window.triggerMedicineVoiceAndBuzzer === 'function') {
-    // Pass a fake object or ID so it knows what to say if it relies on ID.
-    // Or we can just build a special handler.
-    // Instead we can just write the direct logic:
-    try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
-    const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
-    if (voiceEnabled && typeof speak === 'function') {
-      setTimeout(() => speak('Take 500 mg Paracetamol now'), 400);
-    }
+  if (typeof window.testReminder === 'function') {
+    window.testReminder();
   }
 };

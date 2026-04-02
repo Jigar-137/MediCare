@@ -23,7 +23,8 @@ router.post('/', (req, res) => {
 
 // Delete appointment
 router.delete('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
   const appt = db.appointments.findById(id, req.user.id);
   if (!appt) return res.status(404).json({ error: 'Appointment not found' });
 
