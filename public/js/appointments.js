@@ -291,11 +291,15 @@ function triggerApptReminder(docName, timeIso, loc) {
   if(typeof Notification !== 'undefined' && Notification.permission === 'granted') {
     new Notification(msg, { body: txt, icon: '📅' });
   }
-  showToast(`Reminder: ${msg}`, 'info', 10000);
+  showToast(`⏰ Reminder Triggered: ${msg}`, 'info', 10000);
   if(typeof speak === 'function') speak(`Reminder. You have an appointment with ${docName} coming up at ${tStr}.`);
   
-  // Play sound
-  try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+  // Play sound via mobile-safe global unlock wrapper
+  if (typeof window.playBuzzer === 'function') {
+    window.playBuzzer();
+  } else {
+    try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+  }
 }
 
 // DEMO HELPER

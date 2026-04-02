@@ -168,13 +168,14 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
     showOsNotif();
 
     // 2. UI Toast (always shown)
-    showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 8000);
+    showToast(`⏰ Reminder Triggered: Time to take ${medicine.dosage} ${cleanName}`, 'info', 8000);
 
-    // 3. Buzzer sound — only works when page is active (mobile limitation)
-    try {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-      audio.play().catch(e => console.warn('[MediCare] Buzzer blocked (background?):', e));
-    } catch (e) { console.warn('[MediCare] Buzzer failed:', e); }
+    // 3. Buzzer sound — handles mobile autoplay securely via global unlock wrapper
+    if (typeof window.playBuzzer === 'function') {
+      window.playBuzzer();
+    } else {
+      try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch (e) {}
+    }
 
     // 4. Voice — only if voice_enabled and page is in foreground
     if (typeof speakReminderOnly === 'function') {
@@ -272,13 +273,14 @@ window.triggerReminderNow = window.testReminder = function(customMsg) {
   }
 
   // 2. Toast (always shown regardless of permission)
-  showToast('⏰ ' + message, 'info', 8000);
+  showToast(`⏰ Reminder Triggered: ${message}`, 'info', 8000);
 
-  // 3. Buzzer (foreground only on mobile)
-  try {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    audio.play().catch(e => console.warn('[MediCare] Buzzer blocked:', e));
-  } catch (e) { console.warn('[MediCare] Buzzer failed:', e); }
+  // 3. Buzzer (foreground only on mobile wrapper)
+  if (typeof window.playBuzzer === 'function') {
+    window.playBuzzer();
+  } else {
+    try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch (e) {}
+  }
 
   // 4. Voice — respects global voice_enabled toggle
   if (typeof speakReminderOnly === 'function') {

@@ -394,9 +394,13 @@ function onWaterReminderFired() {
   if (!waterReminderEnabled) return;
   if (waterCount < 8) {
     const msg = 'Time to drink your hourly glass of water! 💧';
-    showToast(msg, 'info', 10000);
-    // Sound (foreground only)
-    try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+    showToast(`⏰ Reminder Triggered: ${msg}`, 'info', 10000);
+    // Sound via mobile-safe global unlock wrapper
+    if (typeof window.playBuzzer === 'function') {
+      window.playBuzzer();
+    } else {
+      try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+    }
     // Voice only if globally enabled
     if (typeof speakReminderOnly === 'function') speakReminderOnly('Time to drink water.');
   }

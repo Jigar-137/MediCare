@@ -87,6 +87,16 @@
       "frequency": "daily",
       "notes": "before lunch",
       "created_at": "2026-04-02T15:59:57.459Z"
+    },
+    {
+      "id": 34,
+      "user_id": 3,
+      "name": "j",
+      "dosage": "250mg",
+      "time": "22:15",
+      "frequency": "daily",
+      "notes": "before lunch",
+      "created_at": "2026-04-02T16:44:43.513Z"
     }
   ],
   "appointments": [
@@ -118,7 +128,7 @@
   "_counters": {
     "users": 3,
     "profile": 3,
-    "medicines": 33,
+    "medicines": 34,
     "appointments": 7
   }
 }
