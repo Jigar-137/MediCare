@@ -107,19 +107,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hash = window.location.hash.replace('#', '');
   if (hash && SECTION_TITLES[hash]) navigateTo(hash);
 
-  // ── Global Service Worker Registration ──
+  // ── Service Worker Registration ──────────────────────────────────────────
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then((registration) => {
-      console.log('Service Worker registered with scope:', registration.scope);
-      // Ensure the Service Worker controls the page
-      if (!navigator.serviceWorker.controller) {
-        console.log('SW not controlling page, reloading...');
-        window.location.reload();
-      }
-    }).catch((err) => {
-      console.error('Service Worker registration failed:', err);
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('[MediCare] SW registered, scope:', registration.scope);
+      })
+      .catch(err => {
+        console.error('[MediCare] SW registration failed:', err);
+      });
+
+    // Wait for SW to be ready and controlling the page, then load medicines
+    // (this ensures SET_ALARM messages reach the SW on first load / mobile)
+    navigator.serviceWorker.ready.then(() => {
+      console.log('[MediCare] SW ready and controlling page');
     });
 
+    // Listen for alarm triggers from the SW
     navigator.serviceWorker.addEventListener('message', event => {
       if (!event.data) return;
       if (event.data.type === 'ALARM_TRIGGERED') {
@@ -129,14 +133,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             const medId = id.split('_')[1];
             window.triggerMedicineVoiceAndBuzzer(medId);
           }
+          if (id === 'water_reminder' && typeof window.onWaterReminderFired === 'function') {
+            window.onWaterReminderFired();
+          }
         });
       }
     });
   }
 
-  // Request Notification Permission early
-  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-    Notification.requestPermission();
+  // Request Notification Permission (must be called from user-interaction context or page load)
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission().then(p => {
+      console.log('[MediCare] Notification permission:', p);
+    });
   }
 });
 

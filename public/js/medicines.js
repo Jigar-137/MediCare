@@ -5,10 +5,13 @@ async function loadMedicines() {
   const list = document.getElementById('medicines-list');
   if (!list) return;
   list.innerHTML = `<div class="skeleton" style="height:80px;margin-bottom:12px"></div><div class="skeleton" style="height:80px;margin-bottom:12px"></div>`;
-  
-  const savedVoicePref = localStorage.getItem('medicare_voice_alerts');
-  const toggleEl = document.getElementById('voice-alerts-toggle');
-  if (toggleEl) toggleEl.checked = savedVoicePref !== 'off';
+
+  // Sync voice toggle UI to the unified voice_enabled flag
+  const voiceEnabled = localStorage.getItem('voice_enabled') !== 'false';
+  const globalToggle = document.getElementById('global-voice-toggle');
+  const alertToggle  = document.getElementById('voice-alerts-toggle');
+  if (globalToggle) globalToggle.checked = voiceEnabled;
+  if (alertToggle)  alertToggle.checked  = voiceEnabled;
 
   try {
     const medicines = await apiFetch('/api/medicines');
@@ -96,28 +99,36 @@ function scheduleReminder(medicine) {
   const now = new Date();
   const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
   if (target <= now) target.setDate(target.getDate() + 1);
-  
-  // Save locally in case we need it
+
+  // Cache medicine data for the buzzer/voice trigger
   window.activeMedicines = window.activeMedicines || {};
   window.activeMedicines[medicine.id] = medicine;
-  
-  const cleanName = medicine.name.replace(/</g, '').replace(/>/g, ''); 
 
-  // Push to Service Worker
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'SET_ALARM',
-      id: 'medicine_' + medicine.id,
-      timestamp: target.getTime(),
-      title: 'MediCare Reminder ⏰',
-      body: `Take ${medicine.dosage} ${cleanName}`,
-      icon: '🏥'
-    });
+  const cleanName = medicine.name.replace(/</g, '').replace(/>/g, '');
+  const alarmPayload = {
+    type: 'SET_ALARM',
+    id: 'medicine_' + medicine.id,
+    timestamp: target.getTime(),
+    title: 'MediCare ⏰ Medicine Reminder',
+    body: `Time to take your ${medicine.dosage} of ${cleanName}`,
+    icon: '/icons/icon-192.png'   // real PNG path for mobile
+  };
+
+  // Push alarm to Service Worker (handles background notifications)
+  if ('serviceWorker' in navigator) {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage(alarmPayload);
+    } else {
+      // SW not yet controlling the page — wait for it
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg.active) reg.active.postMessage(alarmPayload);
+      });
+    }
   } else {
-    // Fallback if no SW
+    // No SW support — fall back to setTimeout (foreground only)
     const delay = target - now;
     medicineTimers[medicine.id] = setTimeout(() => {
-       window.triggerMedicineVoiceAndBuzzer(medicine.id);
+      window.triggerMedicineVoiceAndBuzzer(medicine.id);
     }, delay);
   }
 }
@@ -132,37 +143,41 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
   const msg = `${dynUserName}, it's time to take your ${medicine.dosage} of ${cleanName}.`;
 
   const playAlerts = () => {
-    // 1. Browser Notification
-    if (typeof Notification !== 'undefined') {
+    // 1. OS Notification
+    //    The SW already showed a notification if the page was in the background.
+    //    We show one here only when the page is active AND permission is granted.
+    const showOsNotif = () => {
+      if (typeof Notification === 'undefined') return;
       if (Notification.permission === 'granted') {
         new Notification('MediCare ⏰ Medicine Reminder', {
           body: `Time to take your ${medicine.dosage} of ${cleanName}`,
-          icon: '/manifest.json',
-          vibrate: [300, 100, 300]
+          vibrate: [300, 100, 300],
+          tag: 'medicine_' + medicine.id   // prevents duplicates when SW also fires
         });
-      } else if (Notification.permission !== 'denied') {
+      } else if (Notification.permission === 'default') {
         Notification.requestPermission().then(p => {
           if (p === 'granted') {
             new Notification('MediCare ⏰ Medicine Reminder', {
-              body: `Time to take your ${medicine.dosage} of ${cleanName}`
+              body: `Time to take your ${medicine.dosage} of ${cleanName}`,
+              tag: 'medicine_' + medicine.id
             });
           }
         });
       }
-    }
+    };
+    showOsNotif();
 
-    // 2. UI Toast
+    // 2. UI Toast (always shown)
     showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 8000);
 
-    // 3. Buzzer Sound
+    // 3. Buzzer sound — only works when page is active (mobile limitation)
     try {
       const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-      audio.play().catch(e => console.warn('Audio play blocked:', e));
-    } catch (e) { console.warn('Audio play failed', e); }
+      audio.play().catch(e => console.warn('[MediCare] Buzzer blocked (background?):', e));
+    } catch (e) { console.warn('[MediCare] Buzzer failed:', e); }
 
-    // 4. Voice Alert (only if enabled by user toggle)
-    const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
-    if (voiceEnabled && typeof speakReminderOnly === 'function') {
+    // 4. Voice — only if voice_enabled and page is in foreground
+    if (typeof speakReminderOnly === 'function') {
       setTimeout(() => speakReminderOnly(msg), 600);
     }
   };
@@ -184,16 +199,30 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
   scheduleReminder(medicine);
 };
 
-// Request permission on load
-if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-  Notification.requestPermission();
-}
+// Request notification permission proactively on page load.
+// Must be triggered by page load context (not a timer) for mobile browsers.
+(function requestNotifPermission() {
+  if (typeof Notification === 'undefined') return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(p => {
+      console.log('[MediCare] Notification permission:', p);
+    });
+  }
+})();
 
 // ── Helpers ──
+/**
+ * toggleVoiceAlerts() — called by the voice toggle checkboxes.
+ * Writes to the unified 'voice_enabled' key and keeps both toggles in sync.
+ */
 window.toggleVoiceAlerts = function() {
-  const isEnabled = document.getElementById('voice-alerts-toggle').checked;
-  localStorage.setItem('medicare_voice_alerts', isEnabled ? 'on' : 'off');
-  showToast(`Voice alerts ${isEnabled ? 'enabled' : 'disabled'}`, 'info');
+  const alertToggle  = document.getElementById('voice-alerts-toggle');
+  const globalToggle = document.getElementById('global-voice-toggle');
+  // Determine which toggle was just clicked
+  const enabled = alertToggle ? alertToggle.checked : (globalToggle ? globalToggle.checked : true);
+  if (typeof window.setVoiceEnabled === 'function') {
+    window.setVoiceEnabled(enabled);
+  }
 }
 
 function updateMedBadge(count) {
@@ -217,45 +246,47 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Debug / Demo Helper — window.triggerReminderNow() ————————————
-// Call this in the browser console to instantly test the full reminder flow:
-// notification + sound + voice
-window.triggerReminderNow = function(customMsg) {
+// ── Debug / Demo Helper ──────────────────────────────────────────────────────
+// Run window.testReminder() (or triggerReminderNow()) in the browser console
+// to instantly test the full reminder flow: notification + buzzer + voice.
+window.triggerReminderNow = window.testReminder = function(customMsg) {
   const name = (typeof getUserName === 'function') ? getUserName() : 'User';
   const message = customMsg || `${name}, it's time to take your medicine!`;
 
-  // 1. Browser Notification
+  // 1. Request permission if needed, then fire notification
   const fireNotification = () => {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission === 'granted') {
       new Notification('MediCare ⏰ Reminder', {
         body: message,
-        vibrate: [300, 100, 300]
+        vibrate: [300, 100, 300],
+        tag: 'test-reminder'
       });
-    } else {
-      showToast('⏰ ' + message, 'info', 8000);
     }
   };
 
-  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-    Notification.requestPermission().then(() => fireNotification());
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission().then(p => { if (p === 'granted') fireNotification(); });
   } else {
     fireNotification();
   }
 
-  // 2. Show toast regardless
+  // 2. Toast (always shown regardless of permission)
   showToast('⏰ ' + message, 'info', 8000);
 
-  // 3. Buzzer
+  // 3. Buzzer (foreground only on mobile)
   try {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    audio.play().catch(e => console.warn('Buzzer blocked:', e));
-  } catch(e) { console.warn('Buzzer failed', e); }
+    audio.play().catch(e => console.warn('[MediCare] Buzzer blocked:', e));
+  } catch (e) { console.warn('[MediCare] Buzzer failed:', e); }
 
-  // 4. Voice (if enabled)
-  const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
-  if (voiceEnabled && typeof speakReminderOnly === 'function') {
+  // 4. Voice — respects global voice_enabled toggle
+  if (typeof speakReminderOnly === 'function') {
     setTimeout(() => speakReminderOnly(message), 600);
   }
 
-  console.log('[MediCare] triggerReminderNow() fired:', message);
+  console.log('[MediCare] testReminder() fired:', message);
 };
+
+
+

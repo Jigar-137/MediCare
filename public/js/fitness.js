@@ -140,7 +140,8 @@ function setWater(n) {
   renderWaterGlasses();
   if (waterCount === 8) {
     showToast('🎉 Daily water goal reached! Great job!', 'success');
-    speak('Congratulations! You have completed your daily water goal.');
+    // Voice only if globally enabled
+    if (typeof speakReminderOnly === 'function') speakReminderOnly('Congratulations! You have completed your daily water goal.');
   }
 }
 
@@ -394,11 +395,10 @@ function onWaterReminderFired() {
   if (waterCount < 8) {
     const msg = 'Time to drink your hourly glass of water! 💧';
     showToast(msg, 'info', 10000);
-    speak('Time to drink water.');
+    // Sound (foreground only)
     try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
-    
-    // The Service Worker already shows a Notification natively, 
-    // so we only need to alert the foreground UI.
+    // Voice only if globally enabled
+    if (typeof speakReminderOnly === 'function') speakReminderOnly('Time to drink water.');
   }
   // Immediately queue next one
   const interval = typeof window.getDynamicWaterIntervalMs === 'function' ? window.getDynamicWaterIntervalMs() : 3600000;
@@ -517,7 +517,8 @@ window.injectDemoData = function() {
   renderWaterGlasses();
   renderChart();
   showToast('Demo history injected successfully!', 'success');
-  speak('Development mock data injected.');
+  // No voice for dev actions
+  console.log('[MediCare] Demo data injected');
 };
 
 window.triggerWaterReminderNow = function() {
