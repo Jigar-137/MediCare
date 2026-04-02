@@ -6,9 +6,17 @@ async function loadMedicines() {
   if (!list) return;
   list.innerHTML = `<div class="skeleton" style="height:80px;margin-bottom:12px"></div><div class="skeleton" style="height:80px;margin-bottom:12px"></div>`;
   
-  const savedVoicePref = localStorage.getItem('medicare_voice_alerts');
+  const savedVoicePref = localStorage.getItem('voice_enabled');
   const toggleEl = document.getElementById('voice-alerts-toggle');
-  if (toggleEl) toggleEl.checked = savedVoicePref !== 'off';
+  if (toggleEl) {
+    const isEnabled = savedVoicePref === 'true';
+    toggleEl.checked = isEnabled;
+    const lbl = document.getElementById('voice-toggle-container');
+    if (lbl) {
+      const textNode = Array.from(lbl.childNodes).find(n => n.nodeType === 3 && n.textContent.includes('Voice Assistant'));
+      if (textNode) textNode.textContent = ` Voice Assistant ${isEnabled ? 'ON ✅' : 'OFF ❌'} `;
+    }
+  }
 
   try {
     const medicines = await apiFetch('/api/medicines');
@@ -134,8 +142,16 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
     // UI Notification Toast
     showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 6000);
 
-    // System Notification
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    // System Notification via Service Worker (Mobile specific)
+    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification('MediCare Reminder ⏰', { 
+          body: `Time to take ${medicine.dosage} ${cleanName}`, 
+          icon: '/icons/icon.png', // Fallback icon path 
+          vibrate: [300, 100, 300]
+        });
+      });
+    } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       new Notification('MediCare Reminder ⏰', { 
         body: `Time to take ${medicine.dosage} ${cleanName}`, 
         icon: '🏥' 
@@ -148,7 +164,7 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
     } catch (e) { console.warn('Audio play failed', e); }
 
     // Text-To-Speech (Condition governed by UI toggle)
-    const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
+    const voiceEnabled = localStorage.getItem('voice_enabled') === 'true';
     if (voiceEnabled && typeof speak === 'function') {
       setTimeout(() => speak(msg), 400);
     }
@@ -167,8 +183,12 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
   if (document.visibilityState === 'visible') {
     playAlerts();
   } else {
-    // Try system notification even if hidden
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    // Try system notification via SW even if hidden
+    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification('MediCare Reminder ⏰', { body: `Time to take ${medicine.dosage} ${cleanName}`, icon: '/icons/icon.png', vibrate: [300, 100, 300] });
+      });
+    } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       new Notification('MediCare Reminder ⏰', { body: `Time to take ${medicine.dosage} ${cleanName}`, icon: '🏥' });
     }
     const onVisibilityChange = () => {
@@ -185,7 +205,7 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
 };
 
 // Add Debug Trigger for Demo
-window.triggerReminderNow = function() {
+window.testReminder = function() {
   if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
     Notification.requestPermission();
   }
@@ -195,7 +215,11 @@ window.triggerReminderNow = function() {
   
   showToast('⏰ Test Reminder Triggered', 'info', 6000);
   
-  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification('MediCare Test ⏰', { body: msg, icon: '/icons/icon.png', vibrate: [300, 100, 300] });
+    });
+  } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
     new Notification('MediCare Test ⏰', { body: msg, icon: '🏥' });
   }
 
@@ -216,8 +240,13 @@ if (typeof Notification !== 'undefined' && Notification.permission !== 'granted'
 // ── Helpers ──
 window.toggleVoiceAlerts = function() {
   const isEnabled = document.getElementById('voice-alerts-toggle').checked;
-  localStorage.setItem('medicare_voice_alerts', isEnabled ? 'on' : 'off');
-  showToast(`Voice alerts ${isEnabled ? 'enabled' : 'disabled'}`, 'info');
+  localStorage.setItem('voice_enabled', isEnabled);
+  showToast(`Voice Assistant ${isEnabled ? 'ON ✅' : 'OFF ❌'}`, 'info');
+  const lbl = document.getElementById('voice-toggle-container');
+  if (lbl) {
+    const textNode = Array.from(lbl.childNodes).find(n => n.nodeType === 3 && n.textContent.includes('Voice Assistant'));
+    if (textNode) textNode.textContent = ` Voice Assistant ${isEnabled ? 'ON ✅' : 'OFF ❌'} `;
+  }
 }
 
 function updateMedBadge(count) {

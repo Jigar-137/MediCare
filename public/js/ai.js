@@ -78,11 +78,6 @@ async function askAI(query) {
   // Simulated small delay for "thinking"
   setTimeout(() => {
     appendAIMessage('ai', responseText);
-    if (typeof speak === 'function') {
-      // Strip HTML tags and emojis for cleaner voice synthesis
-      const plainTextForVoice = responseText.replace(/<[^>]+>/g, ' ').replace(/👉/g, '').replace(/🔥|📉|🚶|💧|🧊|🌊/g, '').trim();
-      speak(plainTextForVoice);
-    }
   }, 600);
 }
 

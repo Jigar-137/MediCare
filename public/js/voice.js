@@ -110,6 +110,8 @@ function processTtsQueue() {
 }
 
 function speak(text, lang) {
+  if (localStorage.getItem('voice_enabled') !== 'true') return;
+
   if (window.speechSynthesis) {
     window.speechSynthesis.cancel();
   }
