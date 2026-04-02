@@ -1,13 +1,13 @@
 // ── Fitness & Health Tracking Module ──
 const HEALTH_TIPS = [
-  { icon: '🥗', title: 'Eat a Rainbow', text: 'Include colourful fruits and vegetables in every meal for diverse nutrients and antioxidants.' },
-  { icon: '💧', title: 'Stay Hydrated', text: 'Drink at least 8 glasses (2 litres) of water daily. Start your day with a glass of warm water.' },
-  { icon: '🏃', title: 'Stay Active', text: 'Even a 30-minute brisk walk daily reduces the risk of heart disease, diabetes, and depression.' },
-  { icon: '😴', title: 'Quality Sleep', text: 'Aim for 7–8 hours of quality sleep. Good sleep boosts immunity and mental health.' },
-  { icon: '🧘', title: 'Manage Stress', text: 'Practice deep breathing or meditation for 10 minutes daily to reduce cortisol levels.' },
-  { icon: '🦷', title: 'Oral Health', text: 'Brush twice and floss once daily. Poor oral health is linked to heart disease and diabetes.' },
-  { icon: '🌞', title: 'Vitamin D', text: 'Spend 15–20 minutes in morning sunlight. Vitamin D supports bone strength and immunity.' },
-  { icon: '❤️', title: 'Regular Check-ups', text: 'See your doctor at least once a year. Early detection saves lives.' },
+  { id: 't1', type: 'activity', icon: '🚶', title: 'Stay Active', text: 'Walk 5000+ steps daily' },
+  { id: 't2', type: 'hydration', icon: '💧', title: 'Stay Hydrated', text: 'Drink water every hour' },
+  { id: 't3', type: 'wellness', icon: '😴', title: 'Quality Sleep', text: 'Avoid screens 1h before bed' },
+  { id: 't4', type: 'wellness', icon: '🧘', title: 'Manage Stress', text: 'Take deep breaths right now' },
+  { id: 't5', type: 'nutrition', icon: '🥗', title: 'Eat a Rainbow', text: 'Include colourful veggies' },
+  { id: 't6', type: 'wellness', icon: '🌞', title: 'Morning Light', text: 'Get 15 mins of sun early' },
+  { id: 't7', type: 'fitness', icon: '🏃', title: 'Stretch Daily', text: 'Take a 5 min stretch break' },
+  { id: 't8', type: 'wellness', icon: '👁️', title: 'Eye Care', text: 'Follow the 20-20-20 rule' },
 ];
 
 let waterCount = parseInt(localStorage.getItem('medicare_water') || '0');
@@ -547,32 +547,42 @@ function calculateBMI() {
   if (marker) marker.style.left = `${left}%`;
 }
 
+function generateSmartTips(maxCount) {
+  let selected = [];
+  
+  if (waterCount < 6) {
+    selected.push(HEALTH_TIPS.find(t => t.type === 'hydration'));
+  } else if (stepsCount < 5000) {
+    selected.push(HEALTH_TIPS.find(t => t.type === 'activity'));
+  }
+  
+  const available = HEALTH_TIPS.filter(t => !selected.includes(t));
+  available.sort(() => 0.5 - Math.random());
+  
+  selected = [...selected, ...available].slice(0, maxCount);
+  const marqueeItems = [...selected, ...selected]; // Duplicate for seamless infinite loop
+  
+  return marqueeItems.map((tip, index) => {
+    // Only highlight the very first tip in the sequence
+    const isHighlight = (index === 0);
+    return `
+      <div class="health-tip-card-compact ${isHighlight ? 'highlight' : ''}">
+        <div class="health-tip-icon">${tip.icon}</div>
+        <div>
+          <div class="health-tip-title">${tip.title}</div>
+          <div class="health-tip-text">${tip.text}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderFitnessTips() {
   const el = document.getElementById('fitness-tips');
-  if (!el) return;
-  const tips = HEALTH_TIPS.slice(0, 4);
-  el.innerHTML = tips.map(tip => `
-    <div class="health-tip-card">
-      <div class="health-tip-icon">${tip.icon}</div>
-      <div>
-        <div class="health-tip-title">${tip.title}</div>
-        <div class="health-tip-text">${tip.text}</div>
-      </div>
-    </div>
-  `).join('');
+  if (el) el.innerHTML = generateSmartTips(8);
 }
 
 function renderHomeTips() {
   const el = document.getElementById('home-tips');
-  if (!el) return;
-  const tips = [...HEALTH_TIPS].sort(() => 0.5 - Math.random()).slice(0, 3);
-  el.innerHTML = tips.map(tip => `
-    <div class="health-tip-card">
-      <div class="health-tip-icon">${tip.icon}</div>
-      <div>
-        <div class="health-tip-title">${tip.title}</div>
-        <div class="health-tip-text">${tip.text}</div>
-      </div>
-    </div>
-  `).join('');
+  if (el) el.innerHTML = generateSmartTips(8);
 }

@@ -140,7 +140,9 @@
 
         <!-- Quick Health Tips -->
         <div class="section-title" style="margin-bottom:16px" data-i18n="quick_tips">Today's Health Tips</div>
-        <div class="health-tips-carousel" id="home-tips"></div>
+        <div class="health-tips-marquee-wrapper">
+          <div class="marquee-track" id="home-tips"></div>
+        </div>
       </section>
 
       <!-- ══════════════ MEDICINES ══════════════ -->
@@ -472,12 +474,13 @@
             <div id="insight-summary-msg" style="margin-top: 16px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Waiting for more data...</div>
           </div>
 
-          <!-- Health Tips -->
-          <div class="fitness-card" style="grid-column:span 1">
-            <div style="font-size:16px;font-weight:700;margin-bottom:4px" data-i18n="health_tips">Daily Health Tips</div>
-            <div class="health-tips-carousel" id="fitness-tips"></div>
-          </div>
         </div>
+
+        <!-- Health Tips Marquee (Full Width) -->
+        <div class="health-tips-marquee-wrapper" style="margin-top: 24px;">
+          <div class="marquee-track" id="fitness-tips"></div>
+        </div>
+
       </section>
 
       <!-- ══════════════ PROFILE ══════════════ -->
