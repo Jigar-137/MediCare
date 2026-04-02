@@ -22,7 +22,7 @@ self.addEventListener('notificationclick', (event) => {
       }
       // If not, open a new window
       if (clients.openWindow) {
-        return clients.openWindow('/');
+        return clients.openWindow('/dashboard.html');
       }
     })
   );
@@ -33,6 +33,7 @@ self.addEventListener('message', (event) => {
   
   if (event.data.type === 'SET_ALARM') {
     const { id, timestamp, title, body, icon } = event.data;
+    // Replace existing alarm with same id
     alarms = alarms.filter(a => a.id !== id);
     if (timestamp) {
       alarms.push({ id, timestamp, title, body, icon });
@@ -48,33 +49,38 @@ self.addEventListener('message', (event) => {
 function startAlarmLoop() {
   if (alarmTimer) clearInterval(alarmTimer);
   
-  // A service worker might be suspended by the OS, but while it's active, 
-  // checking every 10s is a cheap way to fire scheduled notifications reliably.
+  // Poll every 5 seconds. Each alarm fires exactly ONCE then is removed.
+  // The 'tag' on the notification prevents OS-level duplicates for the same alarm.
   alarmTimer = setInterval(() => {
     const now = Date.now();
-    let triggered = [];
-    
-    alarms.forEach(alarm => {
-      // Allow a tiny 1s margin to trigger
-      if (now >= alarm.timestamp) {
-        triggered.push(alarm.id);
-        self.registration.showNotification(alarm.title, {
-          body: alarm.body,
-          icon: alarm.icon || '/icons/icon.png',
-          badge: '/icons/icon.png',
-          tag: alarm.id,          // OS deduplicates notifications with same tag
-          renotify: false,        // Don't vibrate again if same tag exists
-          vibrate: [300, 100, 300]
-        });
-      }
+    const triggered = alarms.filter(a => now >= a.timestamp);
+
+    if (triggered.length === 0) return;
+
+    // Remove triggered alarms BEFORE showing notification to prevent double-firing
+    const triggeredIds = triggered.map(a => a.id);
+    alarms = alarms.filter(a => !triggeredIds.includes(a.id));
+
+    // Show browser notification for each alarm (tag prevents OS duplicates)
+    triggered.forEach(alarm => {
+      self.registration.showNotification(alarm.title || 'MediCare \u23f0 Reminder', {
+        body: alarm.body || 'Medicine reminder',
+        vibrate: [300, 100, 300],
+        tag: alarm.id
+      });
     });
 
-    if (triggered.length > 0) {
-      alarms = alarms.filter(a => !triggered.includes(a.id));
-      
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => client.postMessage({ type: 'ALARM_TRIGGERED', ids: triggered }));
+    // Notify open clients so they play buzzer + voice
+    self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
+      clients.forEach(client => {
+        client.postMessage({ type: 'ALARM_TRIGGERED', ids: triggeredIds });
       });
+    });
+
+    // Stop polling when no more alarms are pending
+    if (alarms.length === 0) {
+      clearInterval(alarmTimer);
+      alarmTimer = null;
     }
-  }, 5000); // Poll every 5s for faster alarm delivery
+  }, 5000);
 }

@@ -6,17 +6,9 @@ async function loadMedicines() {
   if (!list) return;
   list.innerHTML = `<div class="skeleton" style="height:80px;margin-bottom:12px"></div><div class="skeleton" style="height:80px;margin-bottom:12px"></div>`;
   
-  const savedVoicePref = localStorage.getItem('voice_enabled');
+  const savedVoicePref = localStorage.getItem('medicare_voice_alerts');
   const toggleEl = document.getElementById('voice-alerts-toggle');
-  if (toggleEl) {
-    const isEnabled = savedVoicePref === 'true';
-    toggleEl.checked = isEnabled;
-    const lbl = document.getElementById('voice-toggle-container');
-    if (lbl) {
-      const textNode = Array.from(lbl.childNodes).find(n => n.nodeType === 3 && n.textContent.includes('Voice Assistant'));
-      if (textNode) textNode.textContent = ` Voice Assistant ${isEnabled ? 'ON ✅' : 'OFF ❌'} `;
-    }
-  }
+  if (toggleEl) toggleEl.checked = savedVoicePref !== 'off';
 
   try {
     const medicines = await apiFetch('/api/medicines');
@@ -74,6 +66,7 @@ async function addMedicine(e) {
   try {
     const med = await apiFetch('/api/medicines', { method: 'POST', body: JSON.stringify({ name, dosage, time, frequency, notes }) });
     showToast(`✅ ${name} added! Reminder set for ${formatTime(time)}`, 'success');
+    // NOTE: No speak() here — voice is reserved for actual reminder alerts, not UI actions
     document.getElementById('medicine-form').reset();
     await loadMedicines();
   } catch (err) {
@@ -133,63 +126,51 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
   const medicine = (window.activeMedicines && window.activeMedicines[id]) ? window.activeMedicines[id] : null;
   if (!medicine) return; 
 
+  // Use dynamic user name (defined in ai.js); never hardcoded
   const dynUserName = (typeof getUserName === 'function') ? getUserName() : 'User';
   const cleanName = medicine.name.replace(/</g, '').replace(/>/g, ''); 
-  const msg = `Hi ${dynUserName}, time to take ${medicine.dosage} ${cleanName} now.`;
+  const msg = `${dynUserName}, it's time to take your ${medicine.dosage} of ${cleanName}.`;
 
   const playAlerts = () => {
-    // UI Notification Toast
-    showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 6000);
-
-    // System Notification via Service Worker (Mobile specific)
-    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification('MediCare Reminder ⏰', { 
-          body: `Time to take ${medicine.dosage} ${cleanName}`, 
-          icon: '/icons/icon.png', // Fallback icon path 
+    // 1. Browser Notification
+    if (typeof Notification !== 'undefined') {
+      if (Notification.permission === 'granted') {
+        new Notification('MediCare ⏰ Medicine Reminder', {
+          body: `Time to take your ${medicine.dosage} of ${cleanName}`,
+          icon: '/manifest.json',
           vibrate: [300, 100, 300]
         });
-      });
-    } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      new Notification('MediCare Reminder ⏰', { 
-        body: `Time to take ${medicine.dosage} ${cleanName}`, 
-        icon: '🏥' 
-      });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(p => {
+          if (p === 'granted') {
+            new Notification('MediCare ⏰ Medicine Reminder', {
+              body: `Time to take your ${medicine.dosage} of ${cleanName}`
+            });
+          }
+        });
+      }
     }
 
-    // Play Buzzer Sound
+    // 2. UI Toast
+    showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 8000);
+
+    // 3. Buzzer Sound
     try {
-      new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e => console.warn('Audio play blocked:', e));
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.play().catch(e => console.warn('Audio play blocked:', e));
     } catch (e) { console.warn('Audio play failed', e); }
 
-    // Text-To-Speech (Condition governed by UI toggle)
-    const voiceEnabled = localStorage.getItem('voice_enabled') === 'true';
-    if (voiceEnabled && typeof speak === 'function') {
-      setTimeout(() => speak(msg), 400);
+    // 4. Voice Alert (only if enabled by user toggle)
+    const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
+    if (voiceEnabled && typeof speakReminderOnly === 'function') {
+      setTimeout(() => speakReminderOnly(msg), 600);
     }
   };
-
-  // Prevent duplicate execution logic - keep a timestamp
-  const lastTriggerKey = `med_last_trigger_${id}`;
-  const nowMs = Date.now();
-  const lastTriggerMs = localStorage.getItem(lastTriggerKey);
-  if (lastTriggerMs && nowMs - parseInt(lastTriggerMs) < 60000) {
-    return; // Already triggered within the last minute
-  }
-  localStorage.setItem(lastTriggerKey, nowMs.toString());
 
   // If page is hidden, defer playback until it becomes visible
   if (document.visibilityState === 'visible') {
     playAlerts();
   } else {
-    // Try system notification via SW even if hidden
-    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification('MediCare Reminder ⏰', { body: `Time to take ${medicine.dosage} ${cleanName}`, icon: '/icons/icon.png', vibrate: [300, 100, 300] });
-      });
-    } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      new Notification('MediCare Reminder ⏰', { body: `Time to take ${medicine.dosage} ${cleanName}`, icon: '🏥' });
-    }
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         playAlerts();
@@ -199,50 +180,8 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
     document.addEventListener('visibilitychange', onVisibilityChange);
   }
 
-  // Re-schedule for next day via SW (avoids duplicate JS timeout)
-  const [rh, rm] = medicine.time.split(':').map(Number);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(rh, rm, 0, 0);
-  const cleanNameResched = medicine.name.replace(/</g, '').replace(/>/g, '');
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'SET_ALARM',
-      id: 'medicine_' + medicine.id,
-      timestamp: tomorrow.getTime(),
-      title: 'MediCare Reminder ⏰',
-      body: `Time to take ${medicine.dosage} ${cleanNameResched}`,
-      icon: '/icons/icon.png'
-    });
-  }
-};
-
-// Add Debug Trigger for Demo
-window.testReminder = function() {
-  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
-    Notification.requestPermission();
-  }
-  
-  const dynName = (typeof getUserName === 'function') ? getUserName() : 'User';
-  const msg = `Hi ${dynName}, this is a test reminder.`;
-  
-  showToast('⏰ Test Reminder Triggered', 'info', 6000);
-  
-  if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-    navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification('MediCare Test ⏰', { body: msg, icon: '/icons/icon.png', vibrate: [300, 100, 300] });
-    });
-  } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-    new Notification('MediCare Test ⏰', { body: msg, icon: '🏥' });
-  }
-
-  try {
-    new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e => console.warn('Audio play blocked:', e));
-  } catch(e) {}
-
-  if (typeof speak === 'function') {
-    setTimeout(() => speak(msg), 400);
-  }
+  // Re-schedule for next day
+  scheduleReminder(medicine);
 };
 
 // Request permission on load
@@ -253,13 +192,8 @@ if (typeof Notification !== 'undefined' && Notification.permission !== 'granted'
 // ── Helpers ──
 window.toggleVoiceAlerts = function() {
   const isEnabled = document.getElementById('voice-alerts-toggle').checked;
-  localStorage.setItem('voice_enabled', isEnabled);
-  showToast(`Voice Assistant ${isEnabled ? 'ON ✅' : 'OFF ❌'}`, 'info');
-  const lbl = document.getElementById('voice-toggle-container');
-  if (lbl) {
-    const textNode = Array.from(lbl.childNodes).find(n => n.nodeType === 3 && n.textContent.includes('Voice Assistant'));
-    if (textNode) textNode.textContent = ` Voice Assistant ${isEnabled ? 'ON ✅' : 'OFF ❌'} `;
-  }
+  localStorage.setItem('medicare_voice_alerts', isEnabled ? 'on' : 'off');
+  showToast(`Voice alerts ${isEnabled ? 'enabled' : 'disabled'}`, 'info');
 }
 
 function updateMedBadge(count) {
@@ -282,3 +216,46 @@ function formatRelDate(dateStr) {
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── Debug / Demo Helper — window.triggerReminderNow() ————————————
+// Call this in the browser console to instantly test the full reminder flow:
+// notification + sound + voice
+window.triggerReminderNow = function(customMsg) {
+  const name = (typeof getUserName === 'function') ? getUserName() : 'User';
+  const message = customMsg || `${name}, it's time to take your medicine!`;
+
+  // 1. Browser Notification
+  const fireNotification = () => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('MediCare ⏰ Reminder', {
+        body: message,
+        vibrate: [300, 100, 300]
+      });
+    } else {
+      showToast('⏰ ' + message, 'info', 8000);
+    }
+  };
+
+  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    Notification.requestPermission().then(() => fireNotification());
+  } else {
+    fireNotification();
+  }
+
+  // 2. Show toast regardless
+  showToast('⏰ ' + message, 'info', 8000);
+
+  // 3. Buzzer
+  try {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(e => console.warn('Buzzer blocked:', e));
+  } catch(e) { console.warn('Buzzer failed', e); }
+
+  // 4. Voice (if enabled)
+  const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
+  if (voiceEnabled && typeof speakReminderOnly === 'function') {
+    setTimeout(() => speakReminderOnly(message), 600);
+  }
+
+  console.log('[MediCare] triggerReminderNow() fired:', message);
+};

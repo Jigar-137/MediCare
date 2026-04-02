@@ -202,7 +202,11 @@ async function confirmBooking() {
     // 3. Schedule T-30 Notification via SW
     scheduleAppointmentReminder(doc.name, bookingState.date, bookingState.time, locationMock);
 
-    // 4. Update Success Screen
+    // 4. TTS Confirmation
+    const tMsg = `Your appointment with ${doc.name} is confirmed for ${formatApptTime(bookingState.time)}.`;
+    if(typeof speak === 'function') speak(tMsg);
+
+    // 5. Update Success Screen
     document.getElementById('success-summary-text').innerHTML = `
       <strong>${doc.name}</strong><br>
       ${doc.spec} • ${doc.city}<br><br>

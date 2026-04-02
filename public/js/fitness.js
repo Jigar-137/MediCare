@@ -140,6 +140,7 @@ function setWater(n) {
   renderWaterGlasses();
   if (waterCount === 8) {
     showToast('🎉 Daily water goal reached! Great job!', 'success');
+    speak('Congratulations! You have completed your daily water goal.');
   }
 }
 
@@ -393,8 +394,7 @@ function onWaterReminderFired() {
   if (waterCount < 8) {
     const msg = 'Time to drink your hourly glass of water! 💧';
     showToast(msg, 'info', 10000);
-    const dynName = (typeof getUserName === 'function') ? getUserName() : 'User';
-    speak(`Hi ${dynName}, time to drink water.`);
+    speak('Time to drink water.');
     try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
     
     // The Service Worker already shows a Notification natively, 
@@ -517,6 +517,7 @@ window.injectDemoData = function() {
   renderWaterGlasses();
   renderChart();
   showToast('Demo history injected successfully!', 'success');
+  speak('Development mock data injected.');
 };
 
 window.triggerWaterReminderNow = function() {

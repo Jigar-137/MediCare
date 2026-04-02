@@ -73,6 +73,12 @@ function stopVoice() {
 let ttsQueue = [];
 let isSpeaking = false;
 
+function clearTtsQueue() {
+  ttsQueue = [];
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  isSpeaking = false;
+}
+
 function processTtsQueue() {
   if (ttsQueue.length === 0 || isSpeaking) return;
   if (!window.speechSynthesis) return;
@@ -86,7 +92,6 @@ function processTtsQueue() {
   utterance.pitch = 1;
   
   utterance.onend = () => {
-    // 200ms delay between consecutive speeches as requested
     setTimeout(() => {
       isSpeaking = false;
       processTtsQueue();
@@ -94,8 +99,7 @@ function processTtsQueue() {
   };
   
   utterance.onerror = (e) => {
-    console.error('TTS Error:', e);
-    showToast('Speech playback issue detected', 'warning');
+    console.warn('TTS Error:', e);
     isSpeaking = false;
     processTtsQueue();
   };
@@ -103,22 +107,29 @@ function processTtsQueue() {
   try {
     window.speechSynthesis.speak(utterance);
   } catch(err) {
-    showToast('Voice playback failed', 'warning');
     isSpeaking = false;
     processTtsQueue();
   }
 }
 
+/**
+ * speak() — REMINDER-ONLY voice output.
+ * Only queues speech when called from a reminder trigger or voice command handler.
+ * Do NOT call directly from UI event handlers (button clicks, navigation, etc.).
+ */
 function speak(text, lang) {
-  if (localStorage.getItem('voice_enabled') !== 'true') return;
-
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-  }
-  ttsQueue = [];
-  isSpeaking = false;
-  ttsQueue.push({ text, lang });
+  if (!text || !text.trim()) return;
+  ttsQueue.push({ text: text.trim(), lang });
   processTtsQueue();
+}
+
+/**
+ * speakReminderOnly() — Clears any pending speech first, then speaks.
+ * Use this for medicine/water reminder alerts to ensure no overlap.
+ */
+function speakReminderOnly(text, lang) {
+  clearTtsQueue();
+  speak(text, lang);
 }
 
 function extractTimeInfo(text) {
@@ -185,6 +196,7 @@ function scheduleGeneralReminder(task, delayMs, timeMsg) {
     try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
   }, delayMs);
   
+  speak(`Reminder set for ${timeMsg}.`);
   showToast(`Reminder set for ${timeMsg}`, 'success');
 }
 
@@ -224,6 +236,7 @@ async function handleVoiceCommand(transcript) {
     const name = cleanText;
     
     if (name.length > 0) {
+      speak(`Saving medicine ${name}.`);
       showToast('Saving medicine...', 'info');
 
       try {
@@ -232,11 +245,13 @@ async function handleVoiceCommand(transcript) {
           body: JSON.stringify({ name: name.charAt(0).toUpperCase() + name.slice(1), dosage: '1 pill', time: time24h, frequency: 'daily', notes: 'Added via voice' })
         });
 
+        speak(`Medicine saved for ${time24h}.`);
         showToast(`${name} saved for ${time24h}!`, 'success');
 
         if (typeof navigateTo === 'function') navigateTo('medicines');
         if (typeof loadMedicines === 'function') setTimeout(loadMedicines, 300);
       } catch (err) {
+        speak('Failed to save medicine.');
         showToast(err.message, 'error');
       }
       return;
@@ -250,6 +265,7 @@ async function handleVoiceCommand(transcript) {
     let symptomsArr = symptomsStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
 
     if (symptomsArr.length > 0) {
+      speak('Checking your symptoms.');
       showToast('Checking symptoms...', 'info');
 
       if (typeof navigateTo === 'function') navigateTo('symptoms');
@@ -267,32 +283,40 @@ async function handleVoiceCommand(transcript) {
         if (typeof renderSymptomResults === 'function') {
            setTimeout(() => renderSymptomResults(data), 500); 
         }
+        speak(data.generalAdvice);
       } catch (err) {
+        speak('Could not check symptoms. Please try again.');
         showToast(err.message, 'error');
       }
       return;
     }
   }
 
-  // 4. INTENT: Navigation (Fallback)
+  // 4. INTENT: Navigation (Fallback) — navigate silently, no voice for navigation
   if (lower.includes('medicine') || lower.includes('दवा') || lower.includes('દવા')) {
     navigateTo('medicines');
+    showToast('💊 Opening Medicines', 'info', 2000);
   } else if (lower.includes('appointment') || lower.includes('अपॉइंटमेंट') || lower.includes('મુલાકાત')) {
     navigateTo('appointments');
-  } else if (lower.includes('symptom') || lower.includes('लक्षण') || lower.includes('લક્ષણ')) {
+    showToast('📅 Opening Appointments', 'info', 2000);
+  } else if (lower.includes('symptom') || lower.includes('लक्षण') || lower.includes('લક्ષણ')) {
     navigateTo('symptoms');
+    showToast('🩺 Opening Symptom Checker', 'info', 2000);
   } else if (lower.includes('fitness') || lower.includes('फिटनेस') || lower.includes('ફિટ')) {
     navigateTo('fitness');
+    showToast('🏃 Opening Fitness Tracker', 'info', 2000);
   } else if (lower.includes('profile') || lower.includes('प्रोफाइल') || lower.includes('પ્રોફ')) {
     navigateTo('profile');
+    showToast('👤 Opening Profile', 'info', 2000);
   } else if (lower.includes('home') || lower.includes('dashboard')) {
     navigateTo('home');
+    showToast('🏠 Going to Dashboard', 'info', 2000);
   } else {
     // General Conversational Fallback -> Route to AI
     if (typeof window.pipeToAI === 'function') {
       window.pipeToAI(transcript);
     } else {
-      showToast('Command not understood.', 'warning');
+      showToast('Command not understood. Try: add medicine or check symptoms.', 'warning');
     }
   }
 }

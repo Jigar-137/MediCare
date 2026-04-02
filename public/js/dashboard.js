@@ -78,7 +78,8 @@ function logout() {
   if (!confirm('Are you sure you want to logout?')) return;
   localStorage.removeItem('medicare_token');
   localStorage.removeItem('medicare_user');
-  window.location.href = '/index.html';
+  // No voice on logout — voice is reserved for health reminders only
+  window.location.href = '/';
 }
 
 // ── Init ──
@@ -109,11 +110,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Global Service Worker Registration ──
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').then((registration) => {
-      console.log('✅ Service Worker registered:', registration.scope);
-      // NOTE: Do NOT reload here — SW takes control on next navigation naturally.
-      // Forcing reload causes an infinite reload loop on first visit.
+      console.log('Service Worker registered with scope:', registration.scope);
+      // Ensure the Service Worker controls the page
+      if (!navigator.serviceWorker.controller) {
+        console.log('SW not controlling page, reloading...');
+        window.location.reload();
+      }
     }).catch((err) => {
-      console.warn('Service Worker registration failed:', err);
+      console.error('Service Worker registration failed:', err);
     });
 
     navigator.serviceWorker.addEventListener('message', event => {
@@ -122,8 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const ids = event.data.ids || [];
         ids.forEach(id => {
           if (id.startsWith('medicine_') && typeof window.triggerMedicineVoiceAndBuzzer === 'function') {
-            // Parse as integer — activeMedicines is keyed by number
-            const medId = parseInt(id.split('_')[1], 10);
+            const medId = id.split('_')[1];
             window.triggerMedicineVoiceAndBuzzer(medId);
           }
         });
@@ -137,10 +140,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// ── Debug helpers (kept for backwards compatibility) ──
-// Use window.testReminder() defined in medicines.js for the canonical test function.
+// ── Debug Helper ──
+// window.triggerMedicineAlarmNow() — kept for backwards compat, delegates to triggerReminderNow
 window.triggerMedicineAlarmNow = function() {
-  if (typeof window.testReminder === 'function') {
-    window.testReminder();
+  if (typeof window.triggerReminderNow === 'function') {
+    window.triggerReminderNow();
+  } else {
+    showToast('⏰ Reminder test — triggerReminderNow not loaded yet', 'warning');
   }
 };
