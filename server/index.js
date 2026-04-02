@@ -6,10 +6,12 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const publicPath = path.join(__dirname, '../public');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(publicPath));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -18,11 +20,16 @@ app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/symptoms', require('./routes/symptoms'));
 
-// SPA fallback - serve index.html for all non-API routes
+// Health check
+app.get('/health', (req, res) => res.send('OK'));
+
+// SPA fallback (IMPORTANT FIX)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'index.html'));
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  }
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🏥 MediCare 2.0 Server running on http://localhost:${PORT}\n`);
+  console.log(`🏥 MediCare running on port ${PORT}`);
 });
