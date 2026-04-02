@@ -357,10 +357,10 @@
         </div>
 
         <!-- Layout Containers -->
-        <div style="display: flex; flex-direction: column; gap: 12px; flex: 1; overflow: hidden; padding-bottom: 16px;">
+        <div class="fitness-layout-container" style="display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; padding-bottom: 16px; overflow-x: hidden;">
           
           <!-- Top Row: Cards -->
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <div class="fitness-top-row">
             <!-- Steps -->
             <div class="fitness-card" style="padding: 16px; gap: 10px;">
               <div style="display:flex;justify-content:space-between;align-items:center">
@@ -450,10 +450,10 @@
           </div>
 
           <!-- Bottom Row: Chart & Insights -->
-          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; flex: 1; overflow: hidden; min-height: 250px;">
+          <div class="fitness-bottom-row">
             
             <!-- Chart (Left) -->
-            <div class="fitness-card" style="padding: 16px; display: flex; flex-direction: column;">
+            <div class="fitness-card fitness-chart-wrapper" style="padding: 16px; display: flex; flex-direction: column; flex: 1;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <div style="font-size:15px;font-weight:700">7-Day History</div>
                 <span style="font-size:20px">📊</span>
@@ -464,7 +464,7 @@
             </div>
 
             <!-- Insights + Tips (Right) -->
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="fitness-insights-wrapper" style="display: flex; flex-direction: column; gap: 12px;">
               <!-- Insights -->
               <div class="fitness-card insights-card" style="padding: 16px; background: linear-gradient(135deg, rgba(124,58,237,0.03), rgba(6,182,212,0.03)); border: 1px dashed var(--border);">
                 <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">📈 Weekly Insights</div>

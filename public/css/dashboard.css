@@ -243,6 +243,27 @@
   gap: 16px;
   margin-bottom: var(--space-xl);
 }
+
+/* Fitness Layout CSS Classes */
+.fitness-top-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.fitness-bottom-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 250px;
+}
+.fitness-chart-wrapper {
+  order: 1;
+}
+.fitness-insights-wrapper {
+  order: 2;
+}
 .stat-card {
   background: var(--bg-card);
   backdrop-filter: blur(16px);
@@ -725,6 +746,26 @@
   .welcome-banner::after { display: none; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+@media (max-width: 768px) {
+  .fitness-top-row {
+    grid-template-columns: 1fr;
+  }
+  .fitness-bottom-row {
+    grid-template-columns: 1fr;
+    overflow-y: visible;
+    display: flex;
+    flex-direction: column;
+  }
+  .fitness-chart-wrapper {
+    order: 2;
+    min-height: 250px;
+  }
+  .fitness-insights-wrapper {
+    order: 1;
+  }
+}
+
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
   .stat-number { font-size: 28px; }
