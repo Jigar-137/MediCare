@@ -12,6 +12,8 @@ async function loadMedicines() {
 
   try {
     const medicines = await apiFetch('/api/medicines');
+    window.activeMedicines = window.activeMedicines || {};
+    medicines.forEach(m => window.activeMedicines[m.id] = m);
     renderMedicines(medicines);
     updateMedBadge(medicines.length);
     // Update home stats
@@ -94,37 +96,72 @@ function scheduleReminder(medicine) {
   const now = new Date();
   const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
   if (target <= now) target.setDate(target.getDate() + 1);
-  const delay = target - now;
-  medicineTimers[medicine.id] = setTimeout(() => {
-    const title = 'MediCare Reminder ⏰';
-    const dynUserName = (typeof userName !== 'undefined') ? userName : 'Jigar';
-    const cleanName = medicine.name.replace(/</g, '').replace(/>/g, ''); 
-    const msg = `${dynUserName}, time to take ${medicine.dosage} ${cleanName} now.`;
-    
+  
+  // Save locally in case we need it
+  window.activeMedicines = window.activeMedicines || {};
+  window.activeMedicines[medicine.id] = medicine;
+  
+  const cleanName = medicine.name.replace(/</g, '').replace(/>/g, ''); 
+
+  // Push to Service Worker
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'SET_ALARM',
+      id: 'medicine_' + medicine.id,
+      timestamp: target.getTime(),
+      title: 'MediCare Reminder ⏰',
+      body: `Take ${medicine.dosage} ${cleanName}`,
+      icon: '🏥'
+    });
+  } else {
+    // Fallback if no SW
+    const delay = target - now;
+    medicineTimers[medicine.id] = setTimeout(() => {
+       window.triggerMedicineVoiceAndBuzzer(medicine.id);
+    }, delay);
+  }
+}
+
+window.triggerMedicineVoiceAndBuzzer = function(id) {
+  const medicine = (window.activeMedicines && window.activeMedicines[id]) ? window.activeMedicines[id] : null;
+  if (!medicine) return; 
+
+  const dynUserName = (typeof userName !== 'undefined') ? userName : 'Jigar';
+  const cleanName = medicine.name.replace(/</g, '').replace(/>/g, ''); 
+  const msg = `Time to take ${medicine.dosage} ${cleanName} now.`;
+
+  const playAlerts = () => {
     // UI Notification Toast
     showToast(`⏰ Time to take: ${medicine.dosage} ${cleanName}`, 'info', 6000);
 
-    // Native Browser Notification
-    if (Notification.permission === 'granted') {
-      new Notification(title, { body: `Take ${medicine.dosage} ${cleanName}`, icon: '🏥' });
-    }
-
     // Play Buzzer Sound
     try {
-      new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play();
+      new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e => console.warn('Audio play blocked:', e));
     } catch (e) { console.warn('Audio play failed', e); }
 
     // Text-To-Speech (Condition governed by UI toggle)
     const voiceEnabled = localStorage.getItem('medicare_voice_alerts') !== 'off';
     if (voiceEnabled && typeof speak === 'function') {
-      // 400ms delay to let the buzzer chime fire before speaking
       setTimeout(() => speak(msg), 400);
     }
+  };
 
-    // Re-schedule for next day
-    scheduleReminder(medicine);
-  }, delay);
-}
+  // If page is hidden, defer playback until it becomes visible
+  if (document.visibilityState === 'visible') {
+    playAlerts();
+  } else {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        playAlerts();
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+  }
+
+  // Re-schedule for next day
+  scheduleReminder(medicine);
+};
 
 // Request permission on load
 if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {

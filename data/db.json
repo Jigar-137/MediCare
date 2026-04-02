@@ -77,86 +77,6 @@
       "frequency": "daily",
       "notes": "",
       "created_at": "2026-03-25T06:47:40.324Z"
-    },
-    {
-      "id": 13,
-      "user_id": 3,
-      "name": "Paracetamol.",
-      "dosage": "1 pill",
-      "time": "19:40",
-      "frequency": "daily",
-      "notes": "Added via voice",
-      "created_at": "2026-04-01T14:08:17.406Z"
-    },
-    {
-      "id": 14,
-      "user_id": 3,
-      "name": "Paracetamol.",
-      "dosage": "1 pill",
-      "time": "21:39",
-      "frequency": "daily",
-      "notes": "Added via voice",
-      "created_at": "2026-04-01T16:08:32.528Z"
-    },
-    {
-      "id": 15,
-      "user_id": 3,
-      "name": "Paracetamol.",
-      "dosage": "1 pill",
-      "time": "20:08",
-      "frequency": "daily",
-      "notes": "Added via voice",
-      "created_at": "2026-04-02T02:36:12.987Z"
-    },
-    {
-      "id": 16,
-      "user_id": 3,
-      "name": "j",
-      "dosage": "250mg",
-      "time": "08:09",
-      "frequency": "daily",
-      "notes": "before lunch",
-      "created_at": "2026-04-02T02:38:35.995Z"
-    },
-    {
-      "id": 17,
-      "user_id": 3,
-      "name": "j",
-      "dosage": "250mg",
-      "time": "08:10",
-      "frequency": "daily",
-      "notes": "before lunch",
-      "created_at": "2026-04-02T02:39:31.003Z"
-    },
-    {
-      "id": 18,
-      "user_id": 3,
-      "name": "j",
-      "dosage": "250mg",
-      "time": "08:23",
-      "frequency": "daily",
-      "notes": "before lunch",
-      "created_at": "2026-04-02T02:52:11.379Z"
-    },
-    {
-      "id": 19,
-      "user_id": 3,
-      "name": "j",
-      "dosage": "250mg",
-      "time": "08:25",
-      "frequency": "daily",
-      "notes": "before lunch",
-      "created_at": "2026-04-02T02:54:08.907Z"
-    },
-    {
-      "id": 20,
-      "user_id": 3,
-      "name": "j",
-      "dosage": "250mg",
-      "time": "08:32",
-      "frequency": "daily",
-      "notes": "before lunch",
-      "created_at": "2026-04-02T03:01:31.171Z"
     }
   ],
   "appointments": [
@@ -188,7 +108,7 @@
   "_counters": {
     "users": 3,
     "profile": 3,
-    "medicines": 20,
-    "appointments": 5
+    "medicines": 24,
+    "appointments": 6
   }
 }
