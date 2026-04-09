@@ -25,7 +25,7 @@ router.post('/chat', async (req, res) => {
       return res.status(500).json({ reply: "AI service is currently unavailable. Please configure the GEMINI_API_KEY in the server." });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // using flash for fast response
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // using flash for fast response
 
     const systemPrompt = `You are a helpful health assistant.
 Only provide general health, fitness, medicine, and lifestyle advice.
