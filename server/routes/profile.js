@@ -18,7 +18,7 @@ router.get('/', (req, res) => {
 
 // Update profile
 router.put('/', (req, res) => {
-  const { name, dob, gender, blood_group, height, weight, allergies, emergency_contact } = req.body;
+  const { name, dob, gender, blood_group, height, weight, allergies, emergency_contact, profile_picture } = req.body;
 
   if (name) db.updateUserName(req.user.id, name);
 
@@ -29,7 +29,8 @@ router.put('/', (req, res) => {
     height: height || null,
     weight: weight || null,
     allergies: allergies || null,
-    emergency_contact: emergency_contact || null
+    emergency_contact: emergency_contact || null,
+    profile_picture: profile_picture || undefined
   });
 
   res.json({ success: true });

@@ -61,7 +61,7 @@
 
     <div class="sidebar-footer">
       <div class="sidebar-user" onclick="navigateTo('profile')">
-        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+        <div class="sidebar-avatar" id="sidebar-avatar" style="background-size:cover; background-position:center;">?</div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name" id="sidebar-name">Loading…</div>
           <div class="sidebar-user-role">Patient</div>
@@ -520,7 +520,11 @@
 
         <!-- Profile Hero -->
         <div class="profile-hero animate-fadeIn">
-          <div class="profile-avatar-large" id="profile-avatar-large">?</div>
+          <div style="position:relative; width: max-content; margin-right: 20px;">
+            <div class="profile-avatar-large" id="profile-avatar-large" style="background-size:cover; background-position:center;">?</div>
+            <label for="profile-img-upload" style="position:absolute; bottom:0; right:0; background:var(--primary); color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; border:2px solid white;" title="Upload Picture">📷</label>
+            <input type="file" id="profile-img-upload" accept="image/png, image/jpeg" style="display:none;" onchange="uploadProfilePicture(event)">
+          </div>
           <div>
             <div class="profile-name" id="profile-name-display">Loading…</div>
             <div class="profile-email" id="profile-email-display">—</div>
@@ -556,11 +560,15 @@
   </div>
   <div id="ai-chat-content" class="ai-content">
   </div>
-  <div class="ai-suggestions">
+  <div class="ai-suggestions" id="ai-suggestions-container">
     <span style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:4px; display:block;">SUGGESTIONS</span>
     <button onclick="askAI('How is my health today?')">How is my health today?</button>
     <button onclick="askAI('Am I meeting my goals?')">Am I meeting my goals?</button>
     <button onclick="askAI('Should I book a doctor?')">Should I book a doctor?</button>
+  </div>
+  <div class="ai-input-area" style="display:flex; padding: 12px; border-top: 1px solid var(--border); gap: 8px; background: white; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+    <input type="text" id="ai-text-input" placeholder="Ask MediCare AI..." style="flex:1; border: 1px solid var(--border); border-radius: 20px; padding: 8px 12px; font-size: 13px;" onkeypress="if(event.key==='Enter') window.submitAIChat()">
+    <button onclick="window.submitAIChat()" style="background:var(--primary); color:white; border:none; border-radius: 20px; padding: 0 16px; font-weight: bold; cursor:pointer;">Send</button>
   </div>
 </div>
 

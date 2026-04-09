@@ -76,8 +76,7 @@ function closeSidebar() {
 // ── Logout ──
 function logout() {
   if (!confirm('Are you sure you want to logout?')) return;
-  localStorage.removeItem('medicare_token');
-  localStorage.removeItem('medicare_user');
+  localStorage.clear();
   // No voice on logout — voice is reserved for health reminders only
   window.location.href = '/';
 }
@@ -130,7 +129,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const ids = event.data.ids || [];
         ids.forEach(id => {
           if (id.startsWith('medicine_') && typeof window.triggerMedicineVoiceAndBuzzer === 'function') {
-            const medId = id.split('_')[1];
+            const parts = id.split('_');
+            const medId = parts.length > 2 ? parts[2] : parts[1];
             window.triggerMedicineVoiceAndBuzzer(medId);
           }
           if (id === 'water_reminder' && typeof window.onWaterReminderFired === 'function') {

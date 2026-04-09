@@ -46,48 +46,64 @@ function showSmartGreeting() {
 
 // ── Intelligence Logic ──
 
-async function askAI(query) {
+window.submitAIChat = function() {
+  const input = document.getElementById('ai-text-input');
+  if(!input) return;
+  const val = input.value.trim();
+  if(!val) return;
+  input.value = '';
+  // ensure panel is open
+  const panel = document.getElementById('ai-floating-panel');
+  if (panel.style.display === 'none' || !panel.style.display) {
+    toggleAIPanel();
+  }
+  askAI(val, false);
+}
+
+async function askAI(query, isVoice = false) {
   if (!query) return;
   appendAIMessage('user', query);
   
-  const lower = query.toLowerCase();
-  let responseText = "";
-  
-  // 1. Context Generator (Structured Health Report)
-  if (lower.includes('health today') || lower.includes('my health') || lower.includes('meeting my goals') || lower.includes('health report') || lower.includes('report')) {
-    responseText = generateHealthReport();
-  } 
-  // 2. Doctor / Symptom Generator
-  else if (lower.includes('book a doctor') || lower.includes('consult a doctor') || lower.includes('doctor')) {
-    responseText = generateDoctorRecommendation();
+  // Create a loading bubble
+  const content = document.getElementById('ai-chat-content');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'ai-msg ai-bubble typing-indicator';
+  loadingDiv.innerHTML = '<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>';
+  content.appendChild(loadingDiv);
+  content.scrollTop = content.scrollHeight;
+
+  try {
+    const data = await apiFetch('/api/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message: query })
+    });
+    
+    // Remove loading
+    if(loadingDiv.parentNode) loadingDiv.parentNode.removeChild(loadingDiv);
+    
+    let text = data.reply || "Sorry, I couldn't process your request right now. Please try again.";
+    
+    // Simple markdown formatting
+    let htmlText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\*(.*?)\*/g, '<i>$1</i>').replace(/\n/g, '<br>');
+    appendAIMessage('ai', htmlText);
+    
+    // Voice output strictly if enabled AND triggered via voice
+    if (isVoice && typeof isVoiceEnabled === 'function' && isVoiceEnabled() && typeof speak === 'function') {
+      speak(text.replace(/[\*\_]/g, '')); // clean text for Speech Synthesis
+    }
+  } catch (err) {
+    if(loadingDiv.parentNode) loadingDiv.parentNode.removeChild(loadingDiv);
+    appendAIMessage('ai', "Sorry, I couldn't process your request right now. Please try again.");
   }
-  // 3. Water Specific
-  else if (lower.includes('drink more water') || lower.includes('water')) {
-    const w = parseInt(localStorage.getItem('medicare_water') || 0);
-    const name = getUserName();
-    if (w >= 8) responseText = `You've already crushed your water goal with ${w} glasses, ${name}! 💧`;
-    else if (w >= 4) responseText = `You're at ${w} glasses. You need ${8-w} more to hit your goal. Keep going!`;
-    else responseText = `You're significantly behind on water today, ${name}. Please drink a glass right now!`;
-  }
-  // Fallback -> Always return the dynamic health report rather than an empty/weak response
-  else {
-    responseText = generateHealthReport();
-  }
-  
-  // Simulated small delay for "thinking"
-  setTimeout(() => {
-    appendAIMessage('ai', responseText);
-    // Voice is NOT triggered for AI chat responses — only health reminders use voice
-  }, 600);
 }
 
 // Global hook for Voice module to pipe to AI UI
-window.pipeToAI = function(query) {
+window.pipeToAI = function(query, isVoice = true) {
   const panel = document.getElementById('ai-floating-panel');
   if (panel && (panel.style.display === 'none' || !panel.style.display)) {
     toggleAIPanel();
   }
-  askAI(query);
+  askAI(query, isVoice);
 }
 
 function generateHealthReport() {

@@ -107,7 +107,7 @@ function scheduleReminder(medicine) {
   const cleanName = medicine.name.replace(/</g, '').replace(/>/g, '');
   const alarmPayload = {
     type: 'SET_ALARM',
-    id: 'medicine_' + medicine.id,
+    id: 'medicine_' + medicine.user_id + '_' + medicine.id,
     timestamp: target.getTime(),
     title: 'MediCare ⏰ Medicine Reminder',
     body: `Time to take your ${medicine.dosage} of ${cleanName}`,
@@ -152,14 +152,14 @@ window.triggerMedicineVoiceAndBuzzer = function(id) {
         new Notification('MediCare ⏰ Medicine Reminder', {
           body: `Time to take your ${medicine.dosage} of ${cleanName}`,
           vibrate: [300, 100, 300],
-          tag: 'medicine_' + medicine.id   // prevents duplicates when SW also fires
+          tag: 'medicine_' + medicine.user_id + '_' + medicine.id   // prevents duplicates when SW also fires
         });
       } else if (Notification.permission === 'default') {
         Notification.requestPermission().then(p => {
           if (p === 'granted') {
             new Notification('MediCare ⏰ Medicine Reminder', {
               body: `Time to take your ${medicine.dosage} of ${cleanName}`,
-              tag: 'medicine_' + medicine.id
+              tag: 'medicine_' + medicine.user_id + '_' + medicine.id
             });
           }
         });

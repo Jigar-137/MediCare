@@ -13,13 +13,29 @@ async function loadProfile() {
     const initials = getInitials(p.name);
     const sidebarAvatar = document.getElementById('sidebar-avatar');
     const sidebarName = document.getElementById('sidebar-name');
-    if (sidebarAvatar) sidebarAvatar.textContent = initials;
+    if (sidebarAvatar) {
+      if (p.profile_picture) {
+        sidebarAvatar.style.backgroundImage = `url(${p.profile_picture})`;
+        sidebarAvatar.textContent = '';
+      } else {
+        sidebarAvatar.style.backgroundImage = 'none';
+        sidebarAvatar.textContent = initials;
+      }
+    }
     if (sidebarName) sidebarName.textContent = p.name;
     // Profile hero
     const avatarLarge = document.getElementById('profile-avatar-large');
     const nameDisplay = document.getElementById('profile-name-display');
     const emailDisplay = document.getElementById('profile-email-display');
-    if (avatarLarge) avatarLarge.textContent = initials;
+    if (avatarLarge) {
+      if (p.profile_picture) {
+        avatarLarge.style.backgroundImage = `url(${p.profile_picture})`;
+        avatarLarge.textContent = '';
+      } else {
+        avatarLarge.style.backgroundImage = 'none';
+        avatarLarge.textContent = initials;
+      }
+    }
     if (nameDisplay) nameDisplay.textContent = p.name;
     if (emailDisplay) emailDisplay.textContent = p.email;
     // Welcome banner
@@ -118,3 +134,29 @@ async function saveProfile() {
 function getInitials(name) {
   return (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
+
+window.uploadProfilePicture = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    return showToast('Only JPG / PNG formats are allowed.', 'error');
+  }
+  
+  if (file.size > 2 * 1024 * 1024) {
+    return showToast('Image must be less than 2MB.', 'error');
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result;
+    try {
+      await apiFetch('/api/profile', { method: 'PUT', body: JSON.stringify({ profile_picture: base64 }) });
+      await loadProfile();
+      showToast('Profile picture updated!', 'success');
+    } catch(err) {
+      showToast(err.message, 'error');
+    }
+  };
+  reader.readAsDataURL(file);
+};
