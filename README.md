@@ -265,6 +265,7 @@ MediCare 2.0 uses **Google Gemini AI** to:
 ## 📅 Appontment Booking
 
 <img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20213041.png?raw=true" width="100%"/>
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20213119.png?raw=true" width="100%"/>
 
 ---
 
