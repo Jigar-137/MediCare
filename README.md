@@ -234,16 +234,49 @@ MediCare 2.0 uses **Google Gemini AI** to:
 
 # 📸 Screenshots
 
-> Add your application screenshots here
+## 🔐 Login Page
 
-* Login Page
-* Dashboard
-* Medicine Reminder
-* Symptom Checker
-* AI Assistant
-* Fitness Tracker
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20212030.png?raw=true" width="100%"/>
+
+## 🏠 Home Page
+
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20212317.png?raw=true" width="100%"/>
 
 ---
+
+## 🤖 AI Assistant
+
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20213537.png?raw=true" width="100%"/>
+
+---
+
+## 🩺 Symptom Checker
+
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20212745.png?raw=true" width="100%"/>
+
+---
+
+## 💊 Medicine Reminder
+
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20212623.png?raw=true" width="100%"/>
+
+---
+
+## 📅 Appontment Booking
+
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20213041.png?raw=true" width="100%"/>
+
+---
+
+
+## 🏃 Fitness
+
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20213332.png?raw=true" width="100%"/>
+<img src="https://github.com/Jigar-Chaudhary-137/MediCare/blob/main/screenshots/Screenshot%202026-04-11%20213449.png?raw=true" width="100%"/>
+
+
+---
+
 
 # ⚠️ Limitations
 
