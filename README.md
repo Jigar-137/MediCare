@@ -302,7 +302,7 @@ This project is developed for educational and learning purposes.
 
 ## GitHub
 
-Add your repository link here
+https://github.com/Jigar-Chaudhary-137/MediCare
 
 ## Live Demo
 
